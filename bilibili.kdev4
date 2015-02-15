@@ -1,0 +1,4 @@
+[Project]
+Name=bilibili
+Manager=KDevCMakeManager
+VersionControl=kdevgit
