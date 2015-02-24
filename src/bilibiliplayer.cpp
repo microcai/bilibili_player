@@ -188,7 +188,7 @@ void BiliBiliPlayer::add_barrage(const BiliBili_Comment& c)
 	QVariantAnimation *animation = new QVariantAnimation(danmu);
 	animation->setStartValue(vsize.width());
 	animation->setEndValue((qreal)0.0 - danmu->size().width());
-	animation->setDuration(10000);
+	animation->setDuration(video_size.width() * zoom_level * 6);
 
 	connect(animation, &QVariantAnimation::valueChanged, danmu,[danmu](const QVariant& v){
 		//v.toReal();
@@ -293,11 +293,11 @@ void BiliBiliPlayer::slot_metaDataChanged(QString key, QVariant v)
 		video_size = v.toSize();
 
 		if (video_size.height() < 600 )
-			zoom_level = 2.0;
-		if (video_size.height() < 500 )
 			zoom_level = 3.0;
-		if (video_size.height() < 300 )
+		if (video_size.height() < 500 )
 			zoom_level = 4.0;
+		if (video_size.height() < 300 )
+			zoom_level = 5.0;
 
 		auto widget_size = video_size * zoom_level;
 		videoItem->setSize(widget_size);

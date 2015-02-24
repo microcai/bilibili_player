@@ -71,7 +71,7 @@ private:
 	BiliBili_VideoURLs urls;
 
 	QSizeF video_size;
-	double zoom_level = 1.0;
+	double zoom_level = 2.0;
 
 	int _drag_positoin = -1;
 
