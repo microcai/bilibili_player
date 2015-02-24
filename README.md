@@ -8,3 +8,7 @@ Linux 版 bilibili 因为 flash 版本停滞于 11 的原因, 许多视频无限
 于是就写了一个这个简单的播放器
 
 
+用法: 直接跟B站播放页面的地址
+
+	bilibili_player http://www.bilibili.com/video/av2037598/index_3.html
+
