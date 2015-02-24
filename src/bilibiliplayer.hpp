@@ -51,7 +51,10 @@ private Q_SLOTS:
 
 	void slot_metaDataChanged(QString key,QVariant v);
 
-	void slot_mediaChanged(const QMediaContent& mediacontent);
+	void slot_mediaChanged(int);
+protected:
+	std::pair<int, qint64> map_position_to_media(qint64);
+	qint64 map_position_from_media(qint64);
 
 private:
 	QMainWindow* m_mainwindow = nullptr;

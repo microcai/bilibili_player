@@ -95,8 +95,8 @@ void BiliBiliRes::extract_flv_url()
 
     for (int i = 0; i < durls.size(); i++)
     {
-
-        QDomElement url = durls.at(i).firstChildElement("url");
+		QDomElement durl = durls.at(i).toElement();
+        QDomElement url = durl.firstChildElement("url");
         QString data = url.text();
 
         BiliBili_VideoURL vurl;
@@ -104,7 +104,7 @@ void BiliBiliRes::extract_flv_url()
         vurl.order = i;
         vurl.url = url.text().toStdString();
 
-        vurl.duration = url.firstChildElement("length").text().toULongLong();
+        vurl.duration = durl.firstChildElement("length").text().toULongLong();
 
         auto backup_urls = url.firstChildElement("backup_url").elementsByTagName("url");
 

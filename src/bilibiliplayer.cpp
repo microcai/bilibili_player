@@ -153,7 +153,7 @@ void BiliBiliPlayer::start_play()
 
 	connect(vplayer, SIGNAL(metaDataChanged(QString,QVariant)), this, SLOT(slot_metaDataChanged(QString,QVariant)));
 
-	connect(vplayer, SIGNAL(mediaChanged(QMediaContent)), this, SLOT(slot_mediaChanged(QMediaContent)));
+	connect(play_list, SIGNAL(currentIndexChanged(int)), this, SLOT(slot_mediaChanged(int)));
 
 	connect(vplayer, SIGNAL(positionChanged(qint64)), this, SLOT(positionChanged(qint64)));
 	connect(vplayer, SIGNAL(durationChanged(qint64)), this, SLOT(durationChanged(qint64)));
@@ -218,7 +218,16 @@ void BiliBiliPlayer::drag_slide_done()
 {
 	if (_drag_positoin != -1)
 	{
-		vplayer->setPosition(_drag_positoin);
+		auto result = map_position_to_media(_drag_positoin);
+		if (result.first == play_list->currentIndex())
+			vplayer->setPosition(result.second);
+		else
+		{
+			vplayer->stop();
+			play_list->setCurrentIndex(result.first);
+			vplayer->setPosition(result.second);
+			vplayer->play();
+		}
 
 		// 移动弹幕位置.
 		m_comment_pos = m_comments.begin();
@@ -238,12 +247,13 @@ void BiliBiliPlayer::drag_slide_done()
 
 void BiliBiliPlayer::positionChanged(qint64 position)
 {
+	quint64 real_pos = map_position_from_media(position);
 	if (_drag_positoin == -1)
-		position_slide->setValue(position);
+		position_slide->setValue(real_pos);
 
 	// 播放弹幕.
 
-	double time_stamp = position / 1000.0;
+	double time_stamp = real_pos / 1000.0;
 
 	while (m_comment_pos != m_comments.end())
 	{
@@ -266,6 +276,13 @@ void BiliBiliPlayer::positionChanged(qint64 position)
 
 void BiliBiliPlayer::durationChanged(qint64 duration)
 {
+	if (urls.size() > 1)
+	{
+		duration = std::accumulate(urls.begin(), urls.end(), 0, [](qint64 d, const BiliBili_VideoURL& u){
+			return d + u.duration;
+		});
+	}
+
 	position_slide->setRange(0, duration);
 }
 
@@ -297,9 +314,48 @@ void BiliBiliPlayer::slot_metaDataChanged(QString key, QVariant v)
 
 }
 
-void BiliBiliPlayer::slot_mediaChanged(const QMediaContent& mediacontent)
+void BiliBiliPlayer::slot_mediaChanged(int)
 {
-	std::cout << "playing: " << mediacontent.canonicalUrl().toDisplayString().toStdString() << std::endl;
+	std::cout << "playing: " << play_list->currentMedia().canonicalUrl().toDisplayString().toStdString() << std::endl;
 
 }
 
+std::pair< int, qint64 > BiliBiliPlayer::map_position_to_media(qint64 pos)
+{
+	int media_index = 0;
+
+	if (urls.size() == 1)
+	{
+		return std::make_pair(media_index, pos);
+	}
+
+	for (; media_index < urls.size(); media_index++)
+	{
+		const BiliBili_VideoURL & url = urls[media_index];
+		if (pos > url.duration)
+		{
+			pos -= url.duration;
+		}else
+		{
+			return std::make_pair(media_index, pos);
+		}
+	}
+
+	return std::make_pair(media_index, pos);
+}
+
+
+qint64 BiliBiliPlayer::map_position_from_media(qint64 pos)
+{
+	if (urls.size() == 1)
+		return pos;
+
+	if (play_list->currentIndex() == 0)
+		return pos;
+
+	for (int i = 0; i < play_list->currentIndex(); i++)
+	{
+		pos += urls[i].duration;
+	}
+	return pos;
+}
