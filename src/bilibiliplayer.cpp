@@ -217,7 +217,21 @@ void BiliBiliPlayer::drag_slide(int p)
 void BiliBiliPlayer::drag_slide_done()
 {
 	if (_drag_positoin != -1)
+	{
 		vplayer->setPosition(_drag_positoin);
+
+		// 移动弹幕位置.
+		m_comment_pos = m_comments.begin();
+
+		while (m_comment_pos != m_comments.end())
+		{
+			const BiliBili_Comment & c = * m_comment_pos;
+			if (c.time_stamp > _drag_positoin / 1000.0)
+				break;
+			m_comment_pos ++;
+		}
+
+	}
 	_drag_positoin = -1;
 }
 
@@ -244,6 +258,7 @@ void BiliBiliPlayer::positionChanged(qint64 position)
 			{
 				add_barrage(c);
 			}
+
 		}else
 			break;
 	}
