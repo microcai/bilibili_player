@@ -32,7 +32,6 @@ public:
 	}
 
     virtual void keyPressEvent(QKeyEvent* event){}
-
     virtual void keyReleaseEvent(QKeyEvent* event){}
 };
 
@@ -202,13 +201,35 @@ void BiliBiliPlayer::start_play()
 	shortcut = new QShortcut(QKeySequence(Qt::Key_Space), m_mainwindow);
 	connect(shortcut, SIGNAL(activated()), this, SLOT(toogle_play_pause()));
 
-
 	shortcut = new QShortcut(QKeySequence(QKeySequence::ZoomOut), m_mainwindow);
 	connect(shortcut, SIGNAL(activated()), this, SLOT(zoom_out()));
-
-	shortcut = new QShortcut(QKeySequence(Qt::CTRL + Qt::Key_Plus), m_mainwindow);
+	shortcut = new QShortcut(QKeySequence(QKeySequence::ZoomIn), m_mainwindow);
 	connect(shortcut, SIGNAL(activated()), this, SLOT(zoom_in()));
-	connect(shortcut, SIGNAL(activatedAmbiguously()), this, SLOT(zoom_in()));
+
+	shortcut = new QShortcut(QKeySequence("Ctrl+1"), m_mainwindow);
+	connect(shortcut, &QShortcut::activated, [this](){
+		SetZoomLevel(1.0);
+	});
+	shortcut = new QShortcut(QKeySequence("Ctrl+2"), m_mainwindow);
+	connect(shortcut, &QShortcut::activated, [this](){
+		SetZoomLevel(2.0);
+	});
+	shortcut = new QShortcut(QKeySequence("Ctrl+3"), m_mainwindow);
+	connect(shortcut, &QShortcut::activated, [this](){
+		SetZoomLevel(3.0);
+	});
+	shortcut = new QShortcut(QKeySequence("Ctrl+4"), m_mainwindow);
+	connect(shortcut, &QShortcut::activated, [this](){
+		SetZoomLevel(4.0);
+	});
+	shortcut = new QShortcut(QKeySequence("Ctrl+5"), m_mainwindow);
+	connect(shortcut, &QShortcut::activated, [this](){
+		SetZoomLevel(5.0);
+	});
+	shortcut = new QShortcut(QKeySequence("Ctrl+6"), m_mainwindow);
+	connect(shortcut, &QShortcut::activated, [this](){
+		SetZoomLevel(6.0);
+	});
 }
 
 void BiliBiliPlayer::add_barrage(const BiliBili_Comment& c)
@@ -244,9 +265,10 @@ void BiliBiliPlayer::add_barrage(const BiliBili_Comment& c)
 
 	auto effect =  new QGraphicsDropShadowEffect();
 
-	effect->setOffset(5);
+	effect->setOffset(3);
 	effect->setBlurRadius(5);
 	effect->setEnabled(1);
+	effect->setColor(QColor::fromRgb(0,0,0));
 
 	danmu->setGraphicsEffect(effect);
 
