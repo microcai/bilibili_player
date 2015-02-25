@@ -220,6 +220,9 @@ void BiliBiliPlayer::add_barrage(const BiliBili_Comment& c)
 	animation->setEndValue((qreal)0.0 - danmu->size().width());
 	animation->setDuration(video_size.width() * zoom_level * 6);
 
+	danmu->setX(vsize.width());
+	label->show();
+
 	connect(animation, &QVariantAnimation::valueChanged, danmu,[danmu](const QVariant& v){
 		//v.toReal();
 
