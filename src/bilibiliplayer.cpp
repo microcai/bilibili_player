@@ -254,7 +254,7 @@ void BiliBiliPlayer::add_barrage(const BiliBili_Comment& c)
 	danmu->setY( lastY + danmu->size().height() + 2);
 	lastY += danmu->size().height() + 2;
 
-	if ( lastY > video_size.height()*0.66)
+	if ( lastY > vsize.height()*0.66)
 		lastY = 0;
 
 	connect(animation, SIGNAL(finished()), danmu, SLOT(deleteLater()));
@@ -388,10 +388,17 @@ void BiliBiliPlayer::slot_full_screen_mode_changed(bool)
 {
 	m_mainwindow->setWindowState(m_mainwindow->windowState() ^ Qt::WindowFullScreen);
 
-	if (full_screen_mode())
+	if (m_mainwindow->isFullScreen())
+	{
 		position_slide->hide();
-	else
+		m_mainwindow->setCursor(Qt::BlankCursor);
+		graphicsView->setCursor(Qt::BlankCursor);
+	}
+	else{
 		position_slide->show();
+		m_mainwindow->unsetCursor();
+		graphicsView->unsetCursor();
+	}
 }
 
 void BiliBiliPlayer::slot_metaDataChanged(QString key, QVariant v)
@@ -491,6 +498,7 @@ void BiliBiliPlayer::play_state_changed(QMediaPlayer::State state)
 			break;
 		}
 		case QMediaPlayer::PausedState:
+		case QMediaPlayer::StoppedState:
 		{
 			if (QDBusConnection::sessionBus().isConnected() && screen_saver_cookie)
 			{
