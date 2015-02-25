@@ -22,6 +22,18 @@
 #include "bilibiliplayer.hpp"
 #include "bilibilires.hpp"
 
+class myQGraphicsView : public QGraphicsView
+{
+public:
+    myQGraphicsView(QGraphicsScene *scene, QWidget *parent = 0)
+		:QGraphicsView(scene, parent)
+	{
+	}
+
+    virtual void keyPressEvent(QKeyEvent* event){}
+
+    virtual void keyReleaseEvent(QKeyEvent* event){}
+};
 
 static BiliBili_Comments to_comments(const QDomDocument& barrage)
 {
@@ -121,7 +133,7 @@ void BiliBiliPlayer::start_play()
 
 
 	scene = new QGraphicsScene(m_mainwindow);
-	graphicsView = new QGraphicsView(scene);
+	graphicsView = new myQGraphicsView(scene);
 
 	graphicsView->setCacheMode(QGraphicsView::CacheNone);
 	graphicsView->setViewportUpdateMode(QGraphicsView::FullViewportUpdate);
@@ -227,7 +239,7 @@ void BiliBiliPlayer::add_barrage(const BiliBili_Comment& c)
 	QVariantAnimation *animation = new QVariantAnimation(danmu);
 	animation->setStartValue(vsize.width());
 	animation->setEndValue((qreal)0.0 - danmu->size().width());
-	animation->setDuration(video_size.width() * zoom_level * 6);
+	animation->setDuration(vsize.width() * 6);
 
 	danmu->setX(vsize.width());
 	label->show();
