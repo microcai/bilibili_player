@@ -10,6 +10,7 @@
 #include <QTimer>
 #include <QVBoxLayout>
 #include <QLabel>
+#include <QGraphicsDropShadowEffect>
 
 #include <QGraphicsProxyWidget>
 
@@ -240,6 +241,14 @@ void BiliBiliPlayer::add_barrage(const BiliBili_Comment& c)
 	animation->setStartValue(vsize.width());
 	animation->setEndValue((qreal)0.0 - danmu->size().width());
 	animation->setDuration(vsize.width() * 6);
+
+	auto effect =  new QGraphicsDropShadowEffect();
+
+	effect->setOffset(5);
+	effect->setBlurRadius(5);
+	effect->setEnabled(1);
+
+	danmu->setGraphicsEffect(effect);
 
 	danmu->setX(vsize.width());
 	label->show();
