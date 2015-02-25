@@ -25,7 +25,7 @@ class BiliBiliPlayer : public QObject
     Q_PROPERTY(double full_screen READ full_screen_mode WRITE set_full_screen_mode NOTIFY full_screen_mode_changed)
 
 public:
-	BiliBiliPlayer();
+	BiliBiliPlayer(QObject * parent = nullptr);
 	virtual ~BiliBiliPlayer();
 
 	double ZoomLevel() const
@@ -81,6 +81,8 @@ private Q_SLOTS:
 	void toogle_play_pause();
 
 	void play_state_changed(QMediaPlayer::State);
+    void slot_full_screen_mode_changed(bool);
+
 protected:
 	std::pair<int, qint64> map_position_to_media(qint64);
 	qint64 map_position_from_media(qint64);

@@ -20,49 +20,10 @@
 #include "bilibiliplayer.hpp"
 #include "bilibilires.hpp"
 
-BiliBiliPlayer::BiliBiliPlayer(): QObject()
+
+static BiliBili_Comments to_comments(const QDomDocument& barrage)
 {
-	play_list = new QMediaPlaylist;
-
-	play_list->setPlaybackMode(QMediaPlaylist::Sequential);
-
-	connect(this, SIGNAL(ZoomLevelChanged(double)), this, SLOT(adjust_window_size()));
-}
-
-BiliBiliPlayer::~BiliBiliPlayer()
-{
-	if (m_mainwindow)
-		m_mainwindow->deleteLater();
-	m_mainwindow = nullptr;
-}
-
-void BiliBiliPlayer::toogle_full_screen_mode()
-{
-	set_full_screen_mode(!m_full_screen_mode);
-}
-
-void BiliBiliPlayer::set_full_screen_mode(bool v)
-{
-	if (m_full_screen_mode != v)
-	{
-		m_full_screen_mode = v;
-		full_screen_mode_changed(v);
-	}
-}
-
-void BiliBiliPlayer::append_video_url(BiliBili_VideoURL url)
-{
-	// now we got video uri, start playing!
-	QString current_url = QString::fromStdString(url.url);
-
-	play_list->addMedia(QUrl(current_url));
-
-	// set the title
-	urls.push_back(url);
-}
-
-void BiliBiliPlayer::set_barrage_dom(QDomDocument barrage)
-{
+	BiliBili_Comments m_comments;
 	// now we got 弹幕, start dumping it!
 
 	// 先转换成好用点的格式.
@@ -109,6 +70,42 @@ void BiliBiliPlayer::set_barrage_dom(QDomDocument barrage)
 
 	m_comments.capacity();
 
+	return m_comments;
+}
+
+BiliBiliPlayer::BiliBiliPlayer(QObject * parent)
+	: QObject(parent)
+{
+	play_list = new QMediaPlaylist;
+
+	play_list->setPlaybackMode(QMediaPlaylist::Sequential);
+
+	connect(this, SIGNAL(ZoomLevelChanged(double)), this, SLOT(adjust_window_size()));
+
+	connect(this, SIGNAL(full_screen_mode_changed(bool)), this, SLOT(slot_full_screen_mode_changed(bool)));
+}
+
+BiliBiliPlayer::~BiliBiliPlayer()
+{
+	if (m_mainwindow)
+		m_mainwindow->deleteLater();
+	m_mainwindow = nullptr;
+}
+
+void BiliBiliPlayer::append_video_url(BiliBili_VideoURL url)
+{
+	// now we got video uri, start playing!
+	QString current_url = QString::fromStdString(url.url);
+
+	play_list->addMedia(QUrl(current_url));
+
+	// set the title
+	urls.push_back(url);
+}
+
+void BiliBiliPlayer::set_barrage_dom(QDomDocument barrage)
+{
+	m_comments = to_comments(barrage);
 	m_comment_pos = m_comments.begin();
 }
 
@@ -331,6 +328,31 @@ void BiliBiliPlayer::adjust_window_size()
 	player_visiable_area_size.rheight() += position_slide->geometry().height();
 
 	graphicsView->setFixedSize(player_visiable_area_size.toSize());
+}
+
+
+void BiliBiliPlayer::toogle_full_screen_mode()
+{
+	set_full_screen_mode(!m_full_screen_mode);
+}
+
+void BiliBiliPlayer::set_full_screen_mode(bool v)
+{
+	if (m_full_screen_mode != v)
+	{
+		m_full_screen_mode = v;
+		full_screen_mode_changed(v);
+	}
+}
+
+void BiliBiliPlayer::slot_full_screen_mode_changed(bool)
+{
+	m_mainwindow->setWindowState(m_mainwindow->windowState() ^ Qt::WindowFullScreen);
+
+	if (full_screen_mode())
+		position_slide->hide();
+	else
+		position_slide->show();
 }
 
 void BiliBiliPlayer::slot_metaDataChanged(QString key, QVariant v)
