@@ -99,7 +99,7 @@ void BiliBiliRes::extract_flv_url()
         QDomElement url = durl.firstChildElement("url");
         QString data = url.text();
 
-        BiliBili_VideoURL vurl;
+        VideoURL vurl;
 
         vurl.order = i;
         vurl.url = url.text().toStdString();

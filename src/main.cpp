@@ -2,7 +2,7 @@
 #include <iostream>
 #include <QApplication>
 
-#include "bilibiliplayer.hpp"
+#include "bplayer.hpp"
 #include "bilibilires.hpp"
 
 int main(int argc, char* argv[])
@@ -16,9 +16,9 @@ int main(int argc, char* argv[])
 
 	auto bilibili_res = new BiliBiliRes(bilibili_url);
 
-	BiliBiliPlayer player;
+	BPlayer player;
 
-	QObject::connect(bilibili_res, SIGNAL(video_url_extracted(BiliBili_VideoURL)), &player, SLOT(append_video_url(BiliBili_VideoURL)));
+	QObject::connect(bilibili_res, SIGNAL(video_url_extracted(VideoURL)), &player, SLOT(append_video_url(VideoURL)));
 	QObject::connect(bilibili_res, SIGNAL(barrage_extracted(QDomDocument)), &player, SLOT(set_barrage_dom(QDomDocument)));
 	QObject::connect(bilibili_res, SIGNAL(finished()), &player, SLOT(start_play()));
 	QObject::connect(bilibili_res, SIGNAL(finished()), bilibili_res, SLOT(deleteLater()));

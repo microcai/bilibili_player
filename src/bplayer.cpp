@@ -20,7 +20,7 @@
 
 #include <boost/regex.hpp>
 
-#include "bilibiliplayer.hpp"
+#include "bplayer.hpp"
 #include "bilibilires.hpp"
 
 class myQGraphicsView : public QGraphicsView
@@ -35,9 +35,9 @@ public:
     virtual void keyReleaseEvent(QKeyEvent* event){}
 };
 
-static BiliBili_Comments to_comments(const QDomDocument& barrage)
+static Moving_Comments to_comments(const QDomDocument& barrage)
 {
-	BiliBili_Comments m_comments;
+	Moving_Comments m_comments;
 	// now we got 弹幕, start dumping it!
 
 	// 先转换成好用点的格式.
@@ -48,7 +48,7 @@ static BiliBili_Comments to_comments(const QDomDocument& barrage)
 
 	for (int i=0; i< ds.size(); i++)
 	{
-		BiliBili_Comment c;
+		Moving_Comment c;
 		auto p = ds.at(i).toElement();
 		c.content = p.text().toStdString();
 
@@ -78,7 +78,7 @@ static BiliBili_Comments to_comments(const QDomDocument& barrage)
 		m_comments.push_back(c);
 	}
 
-	std::sort(m_comments.begin(), m_comments.end(), [](const BiliBili_Comment& a, const BiliBili_Comment& b) -> bool{
+	std::sort(m_comments.begin(), m_comments.end(), [](const Moving_Comment& a, const Moving_Comment& b) -> bool{
 		return a.time_stamp < b.time_stamp;
 	});
 
@@ -87,7 +87,7 @@ static BiliBili_Comments to_comments(const QDomDocument& barrage)
 	return m_comments;
 }
 
-BiliBiliPlayer::BiliBiliPlayer(QObject * parent)
+BPlayer::BPlayer(QObject * parent)
 	: QObject(parent)
 {
 	play_list = new QMediaPlaylist;
@@ -99,14 +99,14 @@ BiliBiliPlayer::BiliBiliPlayer(QObject * parent)
 	connect(this, SIGNAL(full_screen_mode_changed(bool)), this, SLOT(slot_full_screen_mode_changed(bool)));
 }
 
-BiliBiliPlayer::~BiliBiliPlayer()
+BPlayer::~BPlayer()
 {
 	if (m_mainwindow)
 		m_mainwindow->deleteLater();
 	m_mainwindow = nullptr;
 }
 
-void BiliBiliPlayer::append_video_url(BiliBili_VideoURL url)
+void BPlayer::append_video_url(VideoURL url)
 {
 	// now we got video uri, start playing!
 	QString current_url = QString::fromStdString(url.url);
@@ -117,14 +117,14 @@ void BiliBiliPlayer::append_video_url(BiliBili_VideoURL url)
 	urls.push_back(url);
 }
 
-void BiliBiliPlayer::set_barrage_dom(QDomDocument barrage)
+void BPlayer::set_barrage_dom(QDomDocument barrage)
 {
 	m_comments = to_comments(barrage);
 	m_comment_pos = m_comments.begin();
 }
 
 
-void BiliBiliPlayer::start_play()
+void BPlayer::start_play()
 {
 	if (urls.empty())
 		exit(1);
@@ -238,7 +238,7 @@ void BiliBiliPlayer::start_play()
 	connect(shortcut, SIGNAL(activated()), this, SLOT(fast_backwork()));
 }
 
-void BiliBiliPlayer::add_barrage(const BiliBili_Comment& c)
+void BPlayer::add_barrage(const Moving_Comment& c)
 {
 	QPalette palatte;
 	palatte.setColor(QPalette::Foreground, c.font_color);
@@ -258,7 +258,7 @@ void BiliBiliPlayer::add_barrage(const BiliBili_Comment& c)
 
 	label->setPalette(palatte);
 
-	BiliBili_Comment cmt = m_comments[1];
+	Moving_Comment cmt = m_comments[1];
 
 	QGraphicsProxyWidget * danmu = scene->addWidget(label);
 
@@ -300,12 +300,12 @@ void BiliBiliPlayer::add_barrage(const BiliBili_Comment& c)
 }
 
 
-void BiliBiliPlayer::drag_slide(int p)
+void BPlayer::drag_slide(int p)
 {
 	_drag_positoin = p;
 }
 
-void BiliBiliPlayer::drag_slide_done()
+void BPlayer::drag_slide_done()
 {
 	if (_drag_positoin != -1)
 	{
@@ -325,7 +325,7 @@ void BiliBiliPlayer::drag_slide_done()
 
 		while (m_comment_pos != m_comments.end())
 		{
-			const BiliBili_Comment & c = * m_comment_pos;
+			const Moving_Comment & c = * m_comment_pos;
 			if (c.time_stamp > _drag_positoin / 1000.0)
 				break;
 			m_comment_pos ++;
@@ -335,19 +335,19 @@ void BiliBiliPlayer::drag_slide_done()
 	_drag_positoin = -1;
 }
 
-void BiliBiliPlayer::fast_backwork()
+void BPlayer::fast_backwork()
 {
 	_drag_positoin = position_slide->value() - 30000;
-	positionChanged(_drag_positoin);
+	drag_slide_done();
 }
 
-void BiliBiliPlayer::fast_forward()
+void BPlayer::fast_forward()
 {
 	_drag_positoin = position_slide->value() + 30000;
-	positionChanged(_drag_positoin);
+	drag_slide_done();
 }
 
-void BiliBiliPlayer::positionChanged(qint64 position)
+void BPlayer::positionChanged(qint64 position)
 {
 	quint64 real_pos = map_position_from_media(position);
 	if (_drag_positoin == -1)
@@ -359,7 +359,7 @@ void BiliBiliPlayer::positionChanged(qint64 position)
 
 	while (m_comment_pos != m_comments.end())
 	{
-		const BiliBili_Comment & c = * m_comment_pos;
+		const Moving_Comment & c = * m_comment_pos;
 		if (c.time_stamp < time_stamp)
 		{
 			m_comment_pos ++;
@@ -376,11 +376,11 @@ void BiliBiliPlayer::positionChanged(qint64 position)
 	}
 }
 
-void BiliBiliPlayer::durationChanged(qint64 duration)
+void BPlayer::durationChanged(qint64 duration)
 {
 	if (urls.size() > 1)
 	{
-		duration = std::accumulate(urls.begin(), urls.end(), 0, [](qint64 d, const BiliBili_VideoURL& u){
+		duration = std::accumulate(urls.begin(), urls.end(), 0, [](qint64 d, const VideoURL& u){
 			return d + u.duration;
 		});
 	}
@@ -388,7 +388,7 @@ void BiliBiliPlayer::durationChanged(qint64 duration)
 	position_slide->setRange(0, duration);
 }
 
-void BiliBiliPlayer::adjust_window_size()
+void BPlayer::adjust_window_size()
 {
 	auto widget_size = video_size * zoom_level;
 	videoItem->setSize(widget_size);
@@ -402,7 +402,7 @@ void BiliBiliPlayer::adjust_window_size()
 	graphicsView->setFixedSize(player_visiable_area_size.toSize());
 }
 
-void BiliBiliPlayer::zoom_in()
+void BPlayer::zoom_in()
 {
 	if (zoom_level < 8)
 		SetZoomLevel(zoom_level + 1.0);
@@ -410,7 +410,7 @@ void BiliBiliPlayer::zoom_in()
 		zoom_level = 8.0;
 }
 
-void BiliBiliPlayer::zoom_out()
+void BPlayer::zoom_out()
 {
 	if(zoom_level >= 2.0)
 		SetZoomLevel(zoom_level - 1.0);
@@ -418,12 +418,12 @@ void BiliBiliPlayer::zoom_out()
 		zoom_level = 1.0;
 }
 
-void BiliBiliPlayer::toogle_full_screen_mode()
+void BPlayer::toogle_full_screen_mode()
 {
 	set_full_screen_mode(!m_full_screen_mode);
 }
 
-void BiliBiliPlayer::set_full_screen_mode(bool v)
+void BPlayer::set_full_screen_mode(bool v)
 {
 	if (m_full_screen_mode != v)
 	{
@@ -432,7 +432,7 @@ void BiliBiliPlayer::set_full_screen_mode(bool v)
 	}
 }
 
-void BiliBiliPlayer::slot_full_screen_mode_changed(bool)
+void BPlayer::slot_full_screen_mode_changed(bool)
 {
 	m_mainwindow->setWindowState(m_mainwindow->windowState() ^ Qt::WindowFullScreen);
 
@@ -449,7 +449,7 @@ void BiliBiliPlayer::slot_full_screen_mode_changed(bool)
 	}
 }
 
-void BiliBiliPlayer::slot_metaDataChanged(QString key, QVariant v)
+void BPlayer::slot_metaDataChanged(QString key, QVariant v)
 {
 	if (key == "Resolution")
 	{
@@ -466,13 +466,13 @@ void BiliBiliPlayer::slot_metaDataChanged(QString key, QVariant v)
 	}
 }
 
-void BiliBiliPlayer::slot_mediaChanged(int)
+void BPlayer::slot_mediaChanged(int)
 {
 	std::cout << "playing: " << play_list->currentMedia().canonicalUrl().toDisplayString().toStdString() << std::endl;
 
 }
 
-std::pair< int, qint64 > BiliBiliPlayer::map_position_to_media(qint64 pos)
+std::pair< int, qint64 > BPlayer::map_position_to_media(qint64 pos)
 {
 	int media_index = 0;
 
@@ -483,7 +483,7 @@ std::pair< int, qint64 > BiliBiliPlayer::map_position_to_media(qint64 pos)
 
 	for (; media_index < urls.size(); media_index++)
 	{
-		const BiliBili_VideoURL & url = urls[media_index];
+		const VideoURL & url = urls[media_index];
 		if (pos > url.duration)
 		{
 			pos -= url.duration;
@@ -497,7 +497,7 @@ std::pair< int, qint64 > BiliBiliPlayer::map_position_to_media(qint64 pos)
 }
 
 
-qint64 BiliBiliPlayer::map_position_from_media(qint64 pos)
+qint64 BPlayer::map_position_from_media(qint64 pos)
 {
 	if (urls.size() == 1)
 		return pos;
@@ -511,7 +511,7 @@ qint64 BiliBiliPlayer::map_position_from_media(qint64 pos)
 	}
 	return pos;
 }
-void BiliBiliPlayer::toogle_play_pause()
+void BPlayer::toogle_play_pause()
 {
 	switch (vplayer->state())
 	{
@@ -526,7 +526,7 @@ void BiliBiliPlayer::toogle_play_pause()
 	}
 }
 
-void BiliBiliPlayer::play_state_changed(QMediaPlayer::State state)
+void BPlayer::play_state_changed(QMediaPlayer::State state)
 {
 	switch(state)
 	{

@@ -16,17 +16,17 @@
 #include <QSlider>
 #include <QDomDocument>
 
-#include "bilibilidef.hpp"
+#include "defs.hpp"
 
-class BiliBiliPlayer : public QObject
+class BPlayer : public QObject
 {
 	Q_OBJECT
     Q_PROPERTY(double ZoomLevel READ ZoomLevel WRITE SetZoomLevel NOTIFY ZoomLevelChanged)
     Q_PROPERTY(double full_screen READ full_screen_mode WRITE set_full_screen_mode NOTIFY full_screen_mode_changed)
 
 public:
-	BiliBiliPlayer(QObject * parent = nullptr);
-	virtual ~BiliBiliPlayer();
+	BPlayer(QObject * parent = nullptr);
+	virtual ~BPlayer();
 
 	double ZoomLevel() const
 	{
@@ -55,7 +55,7 @@ public Q_SLOTS:
 	void toogle_full_screen_mode();
 	void set_full_screen_mode(bool v);
 
-	void append_video_url(BiliBili_VideoURL url);
+	void append_video_url(VideoURL url);
 
 	void set_barrage_dom(QDomDocument barrage);
 
@@ -68,7 +68,7 @@ public Q_SLOTS:
 
 private Q_SLOTS:
 
-	void add_barrage(const BiliBili_Comment& c);
+	void add_barrage(const Moving_Comment& c);
 
 	void drag_slide_done();
 
@@ -104,9 +104,9 @@ private:
 	QGraphicsVideoItem* videoItem;
 	QSlider * position_slide;
 
-	BiliBili_Comments m_comments;
-	BiliBili_Comments::const_iterator m_comment_pos;
-	BiliBili_VideoURLs urls;
+	Moving_Comments m_comments;
+	Moving_Comments::const_iterator m_comment_pos;
+	VideoURLs urls;
 
 	QSizeF video_size;
 	double zoom_level = 2.0;

@@ -13,8 +13,7 @@
 #include <QNetworkAccessManager>
 #include <QDomDocument>
 
-#include "bilibilidef.hpp"
-
+#include "defs.hpp"
 
 class BiliBiliRes : public QObject
 {
@@ -38,7 +37,7 @@ public:
 	virtual ~BiliBiliRes(){};
 
 Q_SIGNALS:
-	void video_url_extracted(BiliBili_VideoURL);
+	void video_url_extracted(VideoURL);
 	void barrage_url_extracted(QString);
 	void barrage_extracted(QDomDocument);
 

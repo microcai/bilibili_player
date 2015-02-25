@@ -8,7 +8,7 @@
 
 #include <QColor>
 
-struct BiliBili_VideoURL
+struct VideoURL
 {
 	std::string url;
 	std::vector<std::string> backup_urls;
@@ -17,9 +17,9 @@ struct BiliBili_VideoURL
 	uint64_t duration;
 };
 
-typedef std::vector<BiliBili_VideoURL> BiliBili_VideoURLs;
+typedef std::vector<VideoURL> VideoURLs;
 
-struct BiliBili_Comment
+struct Moving_Comment
 {
 	std::string content;
 
@@ -40,6 +40,6 @@ struct BiliBili_Comment
 	uint64_t rowID;
 };
 
-typedef std::vector<BiliBili_Comment> BiliBili_Comments;
+typedef std::vector<Moving_Comment> Moving_Comments;
 
 #define Dbus_Service_ScreenSaver_Name "org.freedesktop.ScreenSaver"
