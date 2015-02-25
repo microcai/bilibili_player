@@ -230,6 +230,12 @@ void BiliBiliPlayer::start_play()
 	connect(shortcut, &QShortcut::activated, [this](){
 		SetZoomLevel(6.0);
 	});
+
+	shortcut = new QShortcut(QKeySequence(Qt::CTRL + Qt::Key_Right), m_mainwindow);
+	connect(shortcut, SIGNAL(activated()), this, SLOT(fast_forward()));
+
+	shortcut = new QShortcut(QKeySequence(Qt::CTRL + Qt::Key_Left), m_mainwindow);
+	connect(shortcut, SIGNAL(activated()), this, SLOT(fast_backwork()));
 }
 
 void BiliBiliPlayer::add_barrage(const BiliBili_Comment& c)
@@ -329,6 +335,17 @@ void BiliBiliPlayer::drag_slide_done()
 	_drag_positoin = -1;
 }
 
+void BiliBiliPlayer::fast_backwork()
+{
+	_drag_positoin = position_slide->value() - 30000;
+	positionChanged(_drag_positoin);
+}
+
+void BiliBiliPlayer::fast_forward()
+{
+	_drag_positoin = position_slide->value() + 30000;
+	positionChanged(_drag_positoin);
+}
 
 void BiliBiliPlayer::positionChanged(qint64 position)
 {

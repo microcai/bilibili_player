@@ -86,6 +86,10 @@ private Q_SLOTS:
 	void play_state_changed(QMediaPlayer::State);
     void slot_full_screen_mode_changed(bool);
 
+	void fast_forward(); // call this to forward one minite/2
+
+	void fast_backwork(); // call this to back forward one minite/2
+
 protected:
 	std::pair<int, qint64> map_position_to_media(qint64);
 	qint64 map_position_from_media(qint64);
