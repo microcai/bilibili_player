@@ -15,6 +15,8 @@
 
 #include <QPropertyAnimation>
 
+#include <QtDBus>
+
 #include <boost/regex.hpp>
 
 #include "bilibiliplayer.hpp"
@@ -186,8 +188,15 @@ void BiliBiliPlayer::start_play()
 
 	shortcut = new QShortcut(QKeySequence(Qt::Key_Space), m_mainwindow);
 	connect(shortcut, SIGNAL(activated()), this, SLOT(toogle_play_pause()));
-}
 
+
+	shortcut = new QShortcut(QKeySequence(QKeySequence::ZoomOut), m_mainwindow);
+	connect(shortcut, SIGNAL(activated()), this, SLOT(zoom_out()));
+
+	shortcut = new QShortcut(QKeySequence(Qt::CTRL + Qt::Key_Plus), m_mainwindow);
+	connect(shortcut, SIGNAL(activated()), this, SLOT(zoom_in()));
+	connect(shortcut, SIGNAL(activatedAmbiguously()), this, SLOT(zoom_in()));
+}
 
 void BiliBiliPlayer::add_barrage(const BiliBili_Comment& c)
 {
@@ -333,6 +342,21 @@ void BiliBiliPlayer::adjust_window_size()
 	graphicsView->setFixedSize(player_visiable_area_size.toSize());
 }
 
+void BiliBiliPlayer::zoom_in()
+{
+	if (zoom_level < 8)
+		SetZoomLevel(zoom_level + 1.0);
+	if(zoom_level >= 8.0)
+		zoom_level = 8.0;
+}
+
+void BiliBiliPlayer::zoom_out()
+{
+	if(zoom_level >= 2.0)
+		SetZoomLevel(zoom_level - 1.0);
+	if(zoom_level <= 1.0)
+		zoom_level = 1.0;
+}
 
 void BiliBiliPlayer::toogle_full_screen_mode()
 {
@@ -425,8 +449,10 @@ void BiliBiliPlayer::toogle_play_pause()
 	switch (vplayer->state())
 	{
 		case QMediaPlayer::PlayingState:
+		{
 			vplayer->pause();
 			break;
+		}
 		case QMediaPlayer::PausedState:
 			vplayer->play();
 			break;
@@ -435,6 +461,32 @@ void BiliBiliPlayer::toogle_play_pause()
 
 void BiliBiliPlayer::play_state_changed(QMediaPlayer::State state)
 {
+	switch(state)
+	{
+		case QMediaPlayer::PlayingState:
+		{
+			if (QDBusConnection::sessionBus().isConnected())
+			{
+			    QDBusInterface iface(Dbus_Service_ScreenSaver_Name, "/ScreenSaver", "org.freedesktop.ScreenSaver", QDBusConnection::sessionBus());
 
+				QDBusReply<quint32> reply = iface.call("Inhibit", "bilibili_player", "playing video");
+
+				if (reply.isValid())
+				{
+					screen_saver_cookie = reply.value();
+				}
+			}
+			break;
+		}
+		case QMediaPlayer::PausedState:
+		{
+			if (QDBusConnection::sessionBus().isConnected() && screen_saver_cookie)
+			{
+			    QDBusInterface iface(Dbus_Service_ScreenSaver_Name, "/ScreenSaver", "org.freedesktop.ScreenSaver", QDBusConnection::sessionBus());
+				iface.call("UnInhibit", screen_saver_cookie);
+				screen_saver_cookie = 0;
+			}
+		}
+	}
 
 }

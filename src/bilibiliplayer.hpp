@@ -61,6 +61,11 @@ public Q_SLOTS:
 
 	void start_play();
 
+	void toogle_play_pause();
+
+	void zoom_in();
+	void zoom_out();
+
 private Q_SLOTS:
 
 	void add_barrage(const BiliBili_Comment& c);
@@ -77,8 +82,6 @@ private Q_SLOTS:
 	void slot_mediaChanged(int);
 
 	void adjust_window_size();
-
-	void toogle_play_pause();
 
 	void play_state_changed(QMediaPlayer::State);
     void slot_full_screen_mode_changed(bool);
@@ -107,4 +110,6 @@ private:
 	int _drag_positoin = -1;
 
 	bool m_full_screen_mode = false;
+
+	uint32_t screen_saver_cookie = 0;
 };

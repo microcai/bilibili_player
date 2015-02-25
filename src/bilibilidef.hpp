@@ -41,3 +41,5 @@ struct BiliBili_Comment
 };
 
 typedef std::vector<BiliBili_Comment> BiliBili_Comments;
+
+#define Dbus_Service_ScreenSaver_Name "org.freedesktop.ScreenSaver"

@@ -14,6 +14,7 @@ find_package(Qt5Xml REQUIRED)
 find_package(Threads REQUIRED)
 find_package(Qt5Multimedia REQUIRED)
 find_package(Qt5MultimediaWidgets REQUIRED)
+find_package(Qt5DBus REQUIRED)
 find_package(Boost 1.55 COMPONENTS regex thread REQUIRED)
 
 include_directories(${OPENSSL_INCLUDE_DIR})
