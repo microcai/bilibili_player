@@ -25,6 +25,8 @@ BiliBiliPlayer::BiliBiliPlayer(): QObject()
 	play_list = new QMediaPlaylist;
 
 	play_list->setPlaybackMode(QMediaPlaylist::Sequential);
+
+	connect(this, SIGNAL(ZoomLevelChanged(double)), this, SLOT(adjust_window_size()));
 }
 
 BiliBiliPlayer::~BiliBiliPlayer()
@@ -34,11 +36,19 @@ BiliBiliPlayer::~BiliBiliPlayer()
 	m_mainwindow = nullptr;
 }
 
-void BiliBiliPlayer::set_full_screen_mode(bool v)
+void BiliBiliPlayer::toogle_full_screen_mode()
 {
-	full_screen_mode = v;
+	set_full_screen_mode(!m_full_screen_mode);
 }
 
+void BiliBiliPlayer::set_full_screen_mode(bool v)
+{
+	if (m_full_screen_mode != v)
+	{
+		m_full_screen_mode = v;
+		full_screen_mode_changed(v);
+	}
+}
 
 void BiliBiliPlayer::append_video_url(BiliBili_VideoURL url)
 {
@@ -122,6 +132,14 @@ void BiliBiliPlayer::start_play()
 
 	m_mainwindow->setCentralWidget(graphicsView);
 
+	graphicsView->setBackgroundRole(QPalette::WindowText);
+
+
+	QPalette palette = m_mainwindow->palette();
+	palette.setColor(QPalette::Background, QColor::fromRgb(0,0,0));
+
+	m_mainwindow->setPalette(palette);
+
 
 	videoItem = new QGraphicsVideoItem;
 	videoItem->setSize(QSizeF(640, 480));
@@ -152,6 +170,7 @@ void BiliBiliPlayer::start_play()
 	vplayer->setNotifyInterval(32);
 
 	connect(vplayer, SIGNAL(metaDataChanged(QString,QVariant)), this, SLOT(slot_metaDataChanged(QString,QVariant)));
+	connect(vplayer, SIGNAL(stateChanged(QMediaPlayer::State)), this, SLOT(play_state_changed(QMediaPlayer::State)));
 
 	connect(play_list, SIGNAL(currentIndexChanged(int)), this, SLOT(slot_mediaChanged(int)));
 
@@ -163,6 +182,13 @@ void BiliBiliPlayer::start_play()
 
 	std::cout << "playing: " << play_list->currentMedia().canonicalUrl().toDisplayString().toStdString() << std::endl;
 
+	QShortcut* shortcut = new QShortcut(QKeySequence(QKeySequence::FullScreen), m_mainwindow);
+	connect(shortcut, SIGNAL(activated()), this, SLOT(toogle_full_screen_mode()));
+	shortcut = new QShortcut(QKeySequence("f"), m_mainwindow);
+	connect(shortcut, SIGNAL(activated()), this, SLOT(toogle_full_screen_mode()));
+
+	shortcut = new QShortcut(QKeySequence(Qt::Key_Space), m_mainwindow);
+	connect(shortcut, SIGNAL(activated()), this, SLOT(toogle_play_pause()));
 }
 
 
@@ -176,6 +202,13 @@ void BiliBiliPlayer::add_barrage(const BiliBili_Comment& c)
 	label->setAutoFillBackground(true);
 
 	label->setText(QString::fromStdString(c.content));
+
+	QFont font;
+
+	font.setPointSizeF(c.font_size /1.3);
+	font.setFamily("Sans");
+
+	label->setFont(font);
 
 	label->setPalette(palatte);
 
@@ -286,6 +319,20 @@ void BiliBiliPlayer::durationChanged(qint64 duration)
 	position_slide->setRange(0, duration);
 }
 
+void BiliBiliPlayer::adjust_window_size()
+{
+	auto widget_size = video_size * zoom_level;
+	videoItem->setSize(widget_size);
+
+	position_slide->setGeometry(0, widget_size.height(), widget_size.width(), position_slide->geometry().height());
+
+	QSizeF player_visiable_area_size = widget_size;
+
+	player_visiable_area_size.rheight() += position_slide->geometry().height();
+
+	graphicsView->setFixedSize(player_visiable_area_size.toSize());
+}
+
 void BiliBiliPlayer::slot_metaDataChanged(QString key, QVariant v)
 {
 	if (key == "Resolution")
@@ -299,19 +346,8 @@ void BiliBiliPlayer::slot_metaDataChanged(QString key, QVariant v)
 		if (video_size.height() < 300 )
 			zoom_level = 5.0;
 
-		auto widget_size = video_size * zoom_level;
-		videoItem->setSize(widget_size);
-
-		position_slide->setGeometry(0, widget_size.height(), widget_size.width(), position_slide->geometry().height());
-
-		QSizeF player_visiable_area_size = widget_size;
-
-		player_visiable_area_size.rheight() += position_slide->geometry().height();
-
-		graphicsView->setFixedSize(player_visiable_area_size.toSize());
-
+		ZoomLevelChanged(zoom_level);
 	}
-
 }
 
 void BiliBiliPlayer::slot_mediaChanged(int)
@@ -358,4 +394,22 @@ qint64 BiliBiliPlayer::map_position_from_media(qint64 pos)
 		pos += urls[i].duration;
 	}
 	return pos;
+}
+void BiliBiliPlayer::toogle_play_pause()
+{
+	switch (vplayer->state())
+	{
+		case QMediaPlayer::PlayingState:
+			vplayer->pause();
+			break;
+		case QMediaPlayer::PausedState:
+			vplayer->play();
+			break;
+	}
+}
+
+void BiliBiliPlayer::play_state_changed(QMediaPlayer::State state)
+{
+
+
 }

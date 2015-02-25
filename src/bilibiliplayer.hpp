@@ -2,6 +2,7 @@
 #pragma once
 
 #include <QObject>
+#include <QShortcut>
 #include <QMainWindow>
 
 #include <QGraphicsScene>
@@ -20,16 +21,38 @@
 class BiliBiliPlayer : public QObject
 {
 	Q_OBJECT
+    Q_PROPERTY(double ZoomLevel READ ZoomLevel WRITE SetZoomLevel NOTIFY ZoomLevelChanged)
+    Q_PROPERTY(double full_screen READ full_screen_mode WRITE set_full_screen_mode NOTIFY full_screen_mode_changed)
 
 public:
 	BiliBiliPlayer();
 	virtual ~BiliBiliPlayer();
 
+	double ZoomLevel() const
+	{
+		return zoom_level;
+	}
+
+	void SetZoomLevel(double v)
+	{
+		if(zoom_level !=v)
+		{
+			zoom_level = v;
+			ZoomLevelChanged(v);
+		}
+	}
+
+	bool full_screen_mode() const {
+		return m_full_screen_mode;
+	}
+
 Q_SIGNALS:
 	void full_screen_mode_changed(bool);
+	void ZoomLevelChanged(double);
 
 public Q_SLOTS:
 
+	void toogle_full_screen_mode();
 	void set_full_screen_mode(bool v);
 
 	void append_video_url(BiliBili_VideoURL url);
@@ -52,6 +75,12 @@ private Q_SLOTS:
 	void slot_metaDataChanged(QString key,QVariant v);
 
 	void slot_mediaChanged(int);
+
+	void adjust_window_size();
+
+	void toogle_play_pause();
+
+	void play_state_changed(QMediaPlayer::State);
 protected:
 	std::pair<int, qint64> map_position_to_media(qint64);
 	qint64 map_position_from_media(qint64);
@@ -75,5 +104,5 @@ private:
 
 	int _drag_positoin = -1;
 
-	bool full_screen_mode = false;
+	bool m_full_screen_mode = false;
 };
