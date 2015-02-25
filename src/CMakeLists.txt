@@ -1,5 +1,5 @@
 
-add_executable(bilibili_player main.cpp bplayer.hpp bplayer.cpp bilibilires.cpp)
+add_executable(bilibili_player main.cpp bplayer.hpp bplayer.cpp bilibilires.cpp acfunres.cpp)
 
 set_target_properties(bilibili_player PROPERTIES AUTOMOC ON)
 
