@@ -535,19 +535,33 @@ void BPlayer::toogle_play_pause()
 
 			pause_indicator->setGraphicsEffect(effect);
 
-			auto ani = new QPropertyAnimation(effect, "opacity", svg_item);
+			auto ani_group = new QParallelAnimationGroup(svg_item);
+			connect(ani_group, SIGNAL(finished()), ani_group, SLOT(deleteLater()));
+
+			auto ani = new QPropertyAnimation(effect, "opacity", ani_group);
+			auto ani_4 = new QPropertyAnimation(svg_item, "scale", ani_group);
+
+			connect(ani_4, &QVariantAnimation::valueChanged, svg_item, [svg_item, this](const QVariant & value)
+			{
+				pause_indicator->setX(video_size.width() * zoom_level / 2 - (svg_item->boundingRect().size() * value.toReal()).width()/2);
+				pause_indicator->setY(video_size.height() * zoom_level / 2 - (svg_item->boundingRect().size() * value.toReal()).height()/2);
+			});
+
+			ani_group->addAnimation(ani);
+			ani_group->addAnimation(ani_4);
+			ani_4->setDuration(330);
+			ani_4->setStartValue(3.0);
+			ani_4->setEndValue(1.0);
+			ani_4->setEasingCurve(QEasingCurve::OutBack);
 
 			ani->setDuration(800);
 
 			ani->setStartValue(0.0);
 			ani->setEndValue(0.7);
-			connect(ani, SIGNAL(finished()), ani, SLOT(deleteLater()));
 
-			pause_indicator->setX(video_size.width() * zoom_level / 2 - svg_item->boundingRect().size().width()/2);
-			pause_indicator->setY(video_size.height() * zoom_level / 2 - svg_item->boundingRect().size().height()/2);
 			pause_indicator->show();
 
-			ani->start();
+			ani_group->start();
 			break;
 		}
 		case QMediaPlayer::PausedState:
@@ -600,7 +614,7 @@ void BPlayer::toogle_play_pause()
 
 			ani_4->setDuration(700);
 			ani_4->setStartValue(1.0);
-			ani_4->setEndValue(50.0);
+			ani_4->setEndValue(3.2);
 
 			ani_group->addAnimation(ani_1);
 			ani_group->addAnimation(ani_2);
