@@ -102,6 +102,9 @@ private:
 	QMediaPlaylist* play_list;
 	QMediaPlayer* vplayer;
 	QGraphicsVideoItem* videoItem;
+
+	QGraphicsItem* play_pause_indicator = nullptr;
+
 	QSlider * position_slide;
 
 	Moving_Comments m_comments;

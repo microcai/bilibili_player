@@ -5,17 +5,16 @@
 #include <ctime>
 
 #include <QObject>
+#include <QSequentialAnimationGroup>
 #include <QString>
 #include <QMainWindow>
 #include <QTimer>
 #include <QVBoxLayout>
 #include <QLabel>
 #include <QGraphicsDropShadowEffect>
-
 #include <QGraphicsProxyWidget>
-
 #include <QPropertyAnimation>
-
+#include <QGraphicsSvgItem>
 #include <QtDBus>
 
 #include <boost/regex.hpp>
@@ -518,11 +517,90 @@ void BPlayer::toogle_play_pause()
 		case QMediaPlayer::PlayingState:
 		{
 			vplayer->pause();
+
+			// display 一个 pause 图标
+
+			delete play_pause_indicator;
+
+			QGraphicsSvgItem * svg_item = new QGraphicsSvgItem("://res/pause.svg");
+			play_pause_indicator = svg_item;
+
+			//svg_label->
+
+			scene->addItem(play_pause_indicator);
+
+			auto effect = new QGraphicsOpacityEffect;
+
+			play_pause_indicator->setGraphicsEffect(effect);
+
+			auto ani = new QPropertyAnimation(effect, "opacity", svg_item);
+
+			ani->setDuration(800);
+
+			ani->setStartValue(0.0);
+			ani->setEndValue(0.7);
+			connect(ani, SIGNAL(finished()), ani, SLOT(deleteLater()));
+
+			play_pause_indicator->setX(video_size.width() * zoom_level / 2 - svg_item->boundingRect().size().width()/2);
+			play_pause_indicator->setY(video_size.height() * zoom_level / 2 - svg_item->boundingRect().size().height()/2);
+			play_pause_indicator->show();
+
+			ani->start();
 			break;
 		}
 		case QMediaPlayer::PausedState:
+		{
 			vplayer->play();
+
+			delete play_pause_indicator;
+
+			QGraphicsSvgItem * svg_item = new QGraphicsSvgItem("://res/play.svg");
+			play_pause_indicator = svg_item;
+
+			scene->addItem(play_pause_indicator);
+
+			auto effect = new QGraphicsOpacityEffect;
+
+			play_pause_indicator->setGraphicsEffect(effect);
+
+			auto ani_group = new QSequentialAnimationGroup(svg_item);
+
+			auto ani_1 = new QPropertyAnimation(effect, "opacity", ani_group);
+
+			ani_1->setDuration(50);
+
+			ani_1->setStartValue(0.0);
+			ani_1->setEndValue(0.7);
+
+			auto ani_2 = new QPropertyAnimation(effect, "opacity", ani_group);
+
+			ani_2->setDuration(1000);
+
+			ani_2->setStartValue(0.7);
+			ani_2->setEndValue(0.6);
+
+			auto ani_3 = new QPropertyAnimation(effect, "opacity", ani_group);
+
+			ani_3->setDuration(700);
+
+			ani_3->setStartValue(0.6);
+			ani_3->setEndValue(0.0);
+
+			ani_group->addAnimation(ani_1);
+			ani_group->addAnimation(ani_2);
+			ani_group->addAnimation(ani_3);
+
+			connect(ani_group, SIGNAL(finished()), ani_group, SLOT(deleteLater()));
+
+			play_pause_indicator->setX(video_size.width() * zoom_level / 2 - svg_item->boundingRect().size().width()/2);
+			play_pause_indicator->setY(video_size.height() * zoom_level / 2 - svg_item->boundingRect().size().height()/2);
+
+			play_pause_indicator->show();
+
+			ani_group->start();
+
 			break;
+		}
 	}
 }
 
