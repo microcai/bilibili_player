@@ -41,5 +41,3 @@ struct Moving_Comment
 };
 
 typedef std::vector<Moving_Comment> Moving_Comments;
-
-#define Dbus_Service_ScreenSaver_Name "org.freedesktop.ScreenSaver"

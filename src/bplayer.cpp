@@ -16,7 +16,6 @@
 #include <QGraphicsProxyWidget>
 #include <QPropertyAnimation>
 #include <QGraphicsSvgItem>
-#include <QtDBus>
 
 #include <boost/regex.hpp>
 
@@ -521,18 +520,19 @@ void BPlayer::toogle_play_pause()
 
 			// display 一个 pause 图标
 
-			delete play_pause_indicator;
+			delete play_indicator;
+			play_indicator = nullptr;
 
 			QGraphicsSvgItem * svg_item = new QGraphicsSvgItem("://res/pause.svg");
-			play_pause_indicator = svg_item;
+			pause_indicator = svg_item;
 
 			//svg_label->
 
-			scene->addItem(play_pause_indicator);
+			scene->addItem(pause_indicator);
 
 			auto effect = new QGraphicsOpacityEffect;
 
-			play_pause_indicator->setGraphicsEffect(effect);
+			pause_indicator->setGraphicsEffect(effect);
 
 			auto ani = new QPropertyAnimation(effect, "opacity", svg_item);
 
@@ -541,10 +541,13 @@ void BPlayer::toogle_play_pause()
 			ani->setStartValue(0.0);
 			ani->setEndValue(0.7);
 			connect(ani, SIGNAL(finished()), ani, SLOT(deleteLater()));
-
-			play_pause_indicator->setX(video_size.width() * zoom_level / 2 - svg_item->boundingRect().size().width()/2);
-			play_pause_indicator->setY(video_size.height() * zoom_level / 2 - svg_item->boundingRect().size().height()/2);
-			play_pause_indicator->show();
+			connect(ani, &QAbstractAnimation::finished , [this](){
+				delete pause_indicator;
+				pause_indicator = nullptr;
+			});
+			pause_indicator->setX(video_size.width() * zoom_level / 2 - svg_item->boundingRect().size().width()/2);
+			pause_indicator->setY(video_size.height() * zoom_level / 2 - svg_item->boundingRect().size().height()/2);
+			pause_indicator->show();
 
 			ani->start();
 			break;
@@ -553,16 +556,17 @@ void BPlayer::toogle_play_pause()
 		{
 			vplayer->play();
 
-			delete play_pause_indicator;
+			delete pause_indicator;
+			pause_indicator = nullptr;
 
 			QGraphicsSvgItem * svg_item = new QGraphicsSvgItem("://res/play.svg");
-			play_pause_indicator = svg_item;
+			play_indicator = svg_item;
 
-			scene->addItem(play_pause_indicator);
+			scene->addItem(play_indicator);
 
 			auto effect = new QGraphicsOpacityEffect;
 
-			play_pause_indicator->setGraphicsEffect(effect);
+			play_indicator->setGraphicsEffect(effect);
 
 			auto ani_group = new QSequentialAnimationGroup(svg_item);
 
@@ -587,8 +591,8 @@ void BPlayer::toogle_play_pause()
 
 			connect(ani_4, &QVariantAnimation::valueChanged, svg_item, [svg_item, this](const QVariant & value)
 			{
-				play_pause_indicator->setX(video_size.width() * zoom_level / 2 - (svg_item->boundingRect().size() * value.toReal()).width()/2);
-				play_pause_indicator->setY(video_size.height() * zoom_level / 2 - (svg_item->boundingRect().size() * value.toReal()).height()/2);
+				play_indicator->setX(video_size.width() * zoom_level / 2 - (svg_item->boundingRect().size() * value.toReal()).width()/2);
+				play_indicator->setY(video_size.height() * zoom_level / 2 - (svg_item->boundingRect().size() * value.toReal()).height()/2);
 			});
 
 			ani_3->setDuration(500);
@@ -608,11 +612,15 @@ void BPlayer::toogle_play_pause()
 			ani_group->addAnimation(ani_group_2);
 
 			connect(ani_group, SIGNAL(finished()), ani_group, SLOT(deleteLater()));
+			connect(ani_group, &QAbstractAnimation::finished , [this](){
+				delete play_indicator;
+				play_indicator = nullptr;
+			});
 
-			play_pause_indicator->setX(video_size.width() * zoom_level / 2 - svg_item->boundingRect().size().width()/2);
-			play_pause_indicator->setY(video_size.height() * zoom_level / 2 - svg_item->boundingRect().size().height()/2);
+			play_indicator->setX(video_size.width() * zoom_level / 2 - svg_item->boundingRect().size().width()/2);
+			play_indicator->setY(video_size.height() * zoom_level / 2 - svg_item->boundingRect().size().height()/2);
 
-			play_pause_indicator->show();
+			play_indicator->show();
 
 			ani_group->start();
 
@@ -627,28 +635,13 @@ void BPlayer::play_state_changed(QMediaPlayer::State state)
 	{
 		case QMediaPlayer::PlayingState:
 		{
-			if (QDBusConnection::sessionBus().isConnected())
-			{
-			    QDBusInterface iface(Dbus_Service_ScreenSaver_Name, "/ScreenSaver", "org.freedesktop.ScreenSaver", QDBusConnection::sessionBus());
-
-				QDBusReply<quint32> reply = iface.call("Inhibit", "bilibili_player", "playing video");
-
-				if (reply.isValid())
-				{
-					screen_saver_cookie = reply.value();
-				}
-			}
+			m_screesave_inhibitor.reset(new ScreenSaverInhibitor("bilibili-player", "playing videos"));
 			break;
 		}
 		case QMediaPlayer::PausedState:
 		case QMediaPlayer::StoppedState:
 		{
-			if (QDBusConnection::sessionBus().isConnected() && screen_saver_cookie)
-			{
-			    QDBusInterface iface(Dbus_Service_ScreenSaver_Name, "/ScreenSaver", "org.freedesktop.ScreenSaver", QDBusConnection::sessionBus());
-				iface.call("UnInhibit", screen_saver_cookie);
-				screen_saver_cookie = 0;
-			}
+			m_screesave_inhibitor.reset();
 		}
 	}
 

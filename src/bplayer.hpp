@@ -16,6 +16,7 @@
 #include <QSlider>
 #include <QDomDocument>
 
+#include "screensaverinhibitor.hpp"
 #include "defs.hpp"
 
 class BPlayer : public QObject
@@ -103,7 +104,8 @@ private:
 	QMediaPlayer* vplayer;
 	QGraphicsVideoItem* videoItem;
 
-	QGraphicsItem* play_pause_indicator = nullptr;
+	QGraphicsItem* play_indicator = nullptr;
+	QGraphicsItem* pause_indicator = nullptr;
 
 	QSlider * position_slide;
 
@@ -118,5 +120,5 @@ private:
 
 	bool m_full_screen_mode = false;
 
-	uint32_t screen_saver_cookie = 0;
+	QScopedPointer<ScreenSaverInhibitor> m_screesave_inhibitor;
 };
