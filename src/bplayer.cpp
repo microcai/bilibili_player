@@ -122,7 +122,6 @@ void BPlayer::set_barrage_dom(QDomDocument barrage)
 	m_comment_pos = m_comments.begin();
 }
 
-
 void BPlayer::start_play()
 {
 	if (urls.empty())
@@ -239,31 +238,27 @@ void BPlayer::start_play()
 
 void BPlayer::add_barrage(const Moving_Comment& c)
 {
+	QFont font;
+	font.setPointSizeF(c.font_size /1.3);
+	font.setFamily("Sans");
+
 	QPalette palatte;
 	palatte.setColor(QPalette::Foreground, c.font_color);
 	palatte.setColor(QPalette::Background, Qt::transparent);
 
 	QLabel * label = new QLabel;
 	label->setAutoFillBackground(true);
-
 	label->setText(QString::fromStdString(c.content));
-
-	QFont font;
-
-	font.setPointSizeF(c.font_size /1.3);
-	font.setFamily("Sans");
-
 	label->setFont(font);
-
 	label->setPalette(palatte);
-
-	Moving_Comment cmt = m_comments[1];
-
-	QGraphicsProxyWidget * danmu = scene->addWidget(label);
 
 	auto vsize = video_size * zoom_level;
 
+	QGraphicsProxyWidget * danmu = scene->addWidget(label);
+
 	QVariantAnimation *animation = new QVariantAnimation(danmu);
+	connect(animation, SIGNAL(finished()), danmu, SLOT(deleteLater()));
+
 	animation->setStartValue(vsize.width());
 	animation->setEndValue((qreal)0.0 - danmu->size().width());
 	animation->setDuration(vsize.width() * 6);
@@ -274,30 +269,43 @@ void BPlayer::add_barrage(const Moving_Comment& c)
 	effect->setBlurRadius(5);
 	effect->setEnabled(1);
 	effect->setColor(QColor::fromRgb(0,0,0));
-
 	danmu->setGraphicsEffect(effect);
 
-	danmu->setX(vsize.width());
-	label->show();
+	connect(animation, &QVariantAnimation::valueChanged, danmu, [danmu](const QVariant& v){danmu->setX(v.toReal());});
 
-	connect(animation, &QVariantAnimation::valueChanged, danmu,[danmu](const QVariant& v){
-		//v.toReal();
+	auto preferedY = lastY += danmu->size().height() + 2;
 
-		danmu->setX(v.toReal());
-	});
+	if ( lastY > vsize.height() * 0.34)
+	{
+		// 应该开始寻找替代位置
+		for (int guessY = 0; guessY < vsize.height() * 0.7 ; guessY++)
+		{
+			QRect rect(vsize.width() - 5, guessY, 6, danmu->size().height());
+			auto items = graphicsView->items(rect, Qt::IntersectsItemShape);
 
-	static int lastY = 0;
-	danmu->setY( lastY + danmu->size().height() + 2);
-	lastY += danmu->size().height() + 2;
+			if (items.empty())
+			{
+				preferedY = guessY;
+				break;
+			}else if (items.size() == 1)
+			{
+				if (items.at(0) == danmu)
+				{
+					preferedY = guessY;
+					break;
+				}
+			}
+		}
+	}
 
 	if ( lastY > vsize.height()*0.66)
 		lastY = 0;
 
-	connect(animation, SIGNAL(finished()), danmu, SLOT(deleteLater()));
+	danmu->setX(vsize.width());
+	danmu->setY(preferedY);
 
 	animation->start();
 }
-
 
 void BPlayer::drag_slide(int p)
 {

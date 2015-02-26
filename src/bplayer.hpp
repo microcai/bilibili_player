@@ -115,6 +115,7 @@ private:
 
 	QSizeF video_size;
 	double zoom_level = 2.0;
+	int lastY = 0;
 
 	int _drag_positoin = -1;
 
