@@ -5,6 +5,7 @@
 #include <ctime>
 
 #include <QObject>
+#include <QParallelAnimationGroup>
 #include <QSequentialAnimationGroup>
 #include <QString>
 #include <QMainWindow>
@@ -574,21 +575,37 @@ void BPlayer::toogle_play_pause()
 
 			auto ani_2 = new QPropertyAnimation(effect, "opacity", ani_group);
 
-			ani_2->setDuration(1000);
+			ani_2->setDuration(650);
 
 			ani_2->setStartValue(0.7);
 			ani_2->setEndValue(0.6);
 
-			auto ani_3 = new QPropertyAnimation(effect, "opacity", ani_group);
+			auto ani_group_2 = new QParallelAnimationGroup(svg_item);
 
-			ani_3->setDuration(700);
+			auto ani_3 = new QPropertyAnimation(effect, "opacity", ani_group_2);
+			auto ani_4 = new QPropertyAnimation(svg_item, "scale", ani_group_2);
 
+			connect(ani_4, &QVariantAnimation::valueChanged, svg_item, [svg_item, this](const QVariant & value)
+			{
+				play_pause_indicator->setX(video_size.width() * zoom_level / 2 - (svg_item->boundingRect().size() * value.toReal()).width()/2);
+				play_pause_indicator->setY(video_size.height() * zoom_level / 2 - (svg_item->boundingRect().size() * value.toReal()).height()/2);
+			});
+
+			ani_3->setDuration(500);
 			ani_3->setStartValue(0.6);
 			ani_3->setEndValue(0.0);
 
+			ani_4->setDuration(700);
+			ani_4->setStartValue(1.0);
+			ani_4->setEndValue(50.0);
+
 			ani_group->addAnimation(ani_1);
 			ani_group->addAnimation(ani_2);
-			ani_group->addAnimation(ani_3);
+
+			ani_group_2->addAnimation(ani_3);
+			ani_group_2->addAnimation(ani_4);
+
+			ani_group->addAnimation(ani_group_2);
 
 			connect(ani_group, SIGNAL(finished()), ani_group, SLOT(deleteLater()));
 
