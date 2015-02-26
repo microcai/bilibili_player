@@ -447,11 +447,17 @@ void BPlayer::slot_full_screen_mode_changed(bool)
 		position_slide->hide();
 		m_mainwindow->setCursor(Qt::BlankCursor);
 		graphicsView->setCursor(Qt::BlankCursor);
+		videoItem->setCursor(Qt::BlankCursor);
 	}
-	else{
+	else
+	{
 		position_slide->show();
 		m_mainwindow->unsetCursor();
 		graphicsView->unsetCursor();
+		videoItem->unsetCursor();
+		videoItem->setCursor(Qt::ArrowCursor);
+		m_mainwindow->setCursor(Qt::ArrowCursor);
+		graphicsView->setCursor(Qt::ArrowCursor);
 	}
 }
 
@@ -599,7 +605,7 @@ void BPlayer::toogle_play_pause()
 
 			auto ani_2 = new QPropertyAnimation(effect, "opacity", ani_group);
 
-			ani_2->setDuration(650);
+			ani_2->setDuration(300);
 
 			ani_2->setStartValue(0.7);
 			ani_2->setEndValue(0.6);
@@ -615,13 +621,14 @@ void BPlayer::toogle_play_pause()
 				play_indicator->setY(video_size.height() * zoom_level / 2 - (svg_item->boundingRect().size() * value.toReal()).height()/2);
 			});
 
-			ani_3->setDuration(500);
+			ani_3->setDuration(750);
 			ani_3->setStartValue(0.6);
 			ani_3->setEndValue(0.0);
 
-			ani_4->setDuration(700);
+			ani_4->setDuration(880);
 			ani_4->setStartValue(1.0);
 			ani_4->setEndValue(3.2);
+			ani_4->setEasingCurve(QEasingCurve::InBack);
 
 			ani_group->addAnimation(ani_1);
 			ani_group->addAnimation(ani_2);
