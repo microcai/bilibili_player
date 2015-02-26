@@ -247,14 +247,19 @@ void BPlayer::add_barrage(const Moving_Comment& c)
 	palatte.setColor(QPalette::Background, Qt::transparent);
 
 	QLabel * label = new QLabel;
-	label->setAutoFillBackground(true);
 	label->setText(QString::fromStdString(c.content));
 	label->setFont(font);
 	label->setPalette(palatte);
 
 	auto vsize = video_size * zoom_level;
 
+	auto effect =  new QGraphicsDropShadowEffect();
+	effect->setOffset(3);
+	effect->setBlurRadius(5);
+	effect->setEnabled(1);
+	effect->setColor(QColor::fromRgb(0,0,0));
 	QGraphicsProxyWidget * danmu = scene->addWidget(label);
+	danmu->setGraphicsEffect(effect);
 
 	QVariantAnimation *animation = new QVariantAnimation(danmu);
 	connect(animation, SIGNAL(finished()), danmu, SLOT(deleteLater()));
@@ -262,14 +267,6 @@ void BPlayer::add_barrage(const Moving_Comment& c)
 	animation->setStartValue(vsize.width());
 	animation->setEndValue((qreal)0.0 - danmu->size().width());
 	animation->setDuration(vsize.width() * 6);
-
-	auto effect =  new QGraphicsDropShadowEffect();
-
-	effect->setOffset(3);
-	effect->setBlurRadius(5);
-	effect->setEnabled(1);
-	effect->setColor(QColor::fromRgb(0,0,0));
-	danmu->setGraphicsEffect(effect);
 
 	connect(animation, &QVariantAnimation::valueChanged, danmu, [danmu](const QVariant& v){danmu->setX(v.toReal());});
 
@@ -280,7 +277,7 @@ void BPlayer::add_barrage(const Moving_Comment& c)
 		// 应该开始寻找替代位置
 		for (int guessY = 6; guessY < vsize.height() * 0.7 ; guessY++)
 		{
-			QRect rect(vsize.width() - 5, guessY, 6, danmu->size().height());
+			QRect rect(vsize.width() - 5, guessY, 6, danmu->size().height()+2);
 			auto items = graphicsView->items(rect, Qt::IntersectsItemShape);
 
 			items.removeAll(videoItem);
