@@ -275,13 +275,15 @@ void BPlayer::add_barrage(const Moving_Comment& c)
 
 	auto preferedY = lastY += danmu->size().height() + 2;
 
-	if ( lastY > vsize.height() * 0.34)
+	if ( lastY > vsize.height() * 0.22)
 	{
 		// 应该开始寻找替代位置
-		for (int guessY = 0; guessY < vsize.height() * 0.7 ; guessY++)
+		for (int guessY = 6; guessY < vsize.height() * 0.7 ; guessY++)
 		{
 			QRect rect(vsize.width() - 5, guessY, 6, danmu->size().height());
 			auto items = graphicsView->items(rect, Qt::IntersectsItemShape);
+
+			items.removeAll(videoItem);
 
 			if (items.empty())
 			{
