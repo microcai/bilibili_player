@@ -239,7 +239,7 @@ void BPlayer::start_play()
 void BPlayer::add_barrage(const Moving_Comment& c)
 {
 	QFont font;
-	font.setPointSizeF(c.font_size /1.3);
+	font.setPointSizeF(c.font_size /1.5);
 	font.setFamily("Sans");
 
 	QPalette palatte;
