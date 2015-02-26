@@ -522,6 +522,7 @@ void BPlayer::toogle_play_pause()
 
 			delete play_indicator;
 			play_indicator = nullptr;
+			delete pause_indicator;
 
 			QGraphicsSvgItem * svg_item = new QGraphicsSvgItem("://res/pause.svg");
 			pause_indicator = svg_item;
@@ -541,10 +542,7 @@ void BPlayer::toogle_play_pause()
 			ani->setStartValue(0.0);
 			ani->setEndValue(0.7);
 			connect(ani, SIGNAL(finished()), ani, SLOT(deleteLater()));
-			connect(ani, &QAbstractAnimation::finished , [this](){
-				delete pause_indicator;
-				pause_indicator = nullptr;
-			});
+
 			pause_indicator->setX(video_size.width() * zoom_level / 2 - svg_item->boundingRect().size().width()/2);
 			pause_indicator->setY(video_size.height() * zoom_level / 2 - svg_item->boundingRect().size().height()/2);
 			pause_indicator->show();
@@ -557,6 +555,7 @@ void BPlayer::toogle_play_pause()
 			vplayer->play();
 
 			delete pause_indicator;
+			delete play_indicator;
 			pause_indicator = nullptr;
 
 			QGraphicsSvgItem * svg_item = new QGraphicsSvgItem("://res/play.svg");
@@ -644,5 +643,4 @@ void BPlayer::play_state_changed(QMediaPlayer::State state)
 			m_screesave_inhibitor.reset();
 		}
 	}
-
 }
