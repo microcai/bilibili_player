@@ -468,14 +468,18 @@ void BPlayer::slot_metaDataChanged(QString key, QVariant v)
 	{
 		video_size = v.toSize();
 
-		if (video_size.height() < 600 )
-			zoom_level = 3.0;
-		if (video_size.height() < 500 )
-			zoom_level = 4.0;
-		if (video_size.height() < 300 )
-			zoom_level = 5.0;
+		if ( play_list->currentIndex() == 0 )
+		{
+			if (video_size.height() < 600 )
+				zoom_level = 3.0;
+			if (video_size.height() < 500 )
+				zoom_level = 4.0;
+			if (video_size.height() < 300 )
+				zoom_level = 5.0;
 
-		ZoomLevelChanged(zoom_level);
+			ZoomLevelChanged(zoom_level);
+		}
+
 	}
 }
 
