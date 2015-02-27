@@ -44,7 +44,7 @@ public:
 	}
 
 	bool full_screen_mode() const {
-		return m_full_screen_mode;
+		return m_mainwindow->isFullScreen();
 	}
 
 Q_SIGNALS:
@@ -118,8 +118,6 @@ private:
 	int lastY = 0;
 
 	int _drag_positoin = -1;
-
-	bool m_full_screen_mode = false;
 
 	QScopedPointer<ScreenSaverInhibitor> m_screesave_inhibitor;
 };

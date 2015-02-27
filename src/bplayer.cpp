@@ -426,22 +426,23 @@ void BPlayer::zoom_out()
 
 void BPlayer::toogle_full_screen_mode()
 {
-	set_full_screen_mode(!m_full_screen_mode);
+	m_mainwindow->setWindowState(m_mainwindow->windowState() ^ Qt::WindowFullScreen);
+
+	full_screen_mode_changed(full_screen_mode());
 }
 
 void BPlayer::set_full_screen_mode(bool v)
 {
-	if (m_full_screen_mode != v)
-	{
-		m_full_screen_mode = v;
-		full_screen_mode_changed(v);
-	}
+	if (v)
+		m_mainwindow->setWindowState(m_mainwindow->windowState() | Qt::WindowFullScreen);
+	else
+		m_mainwindow->setWindowState(m_mainwindow->windowState() & ~Qt::WindowFullScreen);
+
+	full_screen_mode_changed(v);
 }
 
 void BPlayer::slot_full_screen_mode_changed(bool)
 {
-	m_mainwindow->setWindowState(m_mainwindow->windowState() ^ Qt::WindowFullScreen);
-
 	if (m_mainwindow->isFullScreen())
 	{
 		position_slide->hide();
