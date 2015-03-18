@@ -21,6 +21,8 @@ find_package(Qt5DBus REQUIRED)
 find_package(Qt5Svg REQUIRED)
 find_package(Boost 1.55 COMPONENTS regex thread REQUIRED)
 
+find_package(KF5WindowSystem)
+
 include_directories(${OPENSSL_INCLUDE_DIR})
 
 link_libraries(${OPENSSL_LIBRARIES} ${Boost_LIBRARIES})

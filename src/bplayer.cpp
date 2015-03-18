@@ -20,6 +20,10 @@
 #include <QScreen>
 #include <QToolTip>
 
+#ifdef HAVE_KF5_WINDOWSYSTEM
+#include <KWindowSystem>
+#endif
+
 #include <boost/regex.hpp>
 
 #include "bplayer.hpp"
@@ -486,12 +490,18 @@ void BPlayer::set_full_screen_mode(bool v)
 
 void BPlayer::slot_full_screen_mode_changed(bool)
 {
+#ifdef HAVE_KF5_WINDOWSYSTEM
+	KWindowSystem::setBlockingCompositing(m_mainwindow->winId(), m_mainwindow->isFullScreen());
+#endif
+
 	if (m_mainwindow->isFullScreen())
 	{
 		position_slide->hide();
 		m_mainwindow->setCursor(Qt::BlankCursor);
 		graphicsView->setCursor(Qt::BlankCursor);
 		videoItem->setCursor(Qt::BlankCursor);
+
+
 	}
 	else
 	{
