@@ -327,6 +327,13 @@ void BPlayer::add_barrage(const Moving_Comment& c)
 void BPlayer::drag_slide(int p)
 {
 	_drag_positoin = p;
+
+	auto current_play_time = QString("%1:%2:%3").arg(((_drag_positoin/1000)/60)/60)
+		.arg(QString::fromStdString(std::to_string(((_drag_positoin/1000)/60) % 60)), 2, QChar('0'))
+		.arg(QString::fromStdString(std::to_string((_drag_positoin/1000) % 60)), 2, QChar('0'));
+
+	QToolTip::hideText();
+	QToolTip::showText(QCursor::pos(), current_play_time);
 }
 
 void BPlayer::drag_slide_done()
