@@ -12,3 +12,19 @@ Linux 版 bilibili 因为 flash 版本停滞于 11 的原因, 许多视频无限
 
 	bilibili_player http://www.bilibili.com/video/av2037598/index_3.html
 
+
+# 编译 bilibili_player
+
+## 依赖
+
+bilibili_player 依赖 Qt5Widgets Qt5Multimedia Qt5Network Qt5Xml
+
+## 编译
+
+Gentoo 用户请使用 [gentoo-zh overlay](https://github.com/microcai/gentoo-zh)
+
+	layman -f -a gentoo-zh
+	emerge bilibili_player
+
+其他用户， 请使用 cmake 编译。 需要 cmake >= 3.0
+
