@@ -1,6 +1,7 @@
 
 #include <iostream>
 #include <QApplication>
+#include <QScreen>
 
 #include "bplayer.hpp"
 #include "bilibilires.hpp"
@@ -8,6 +9,22 @@
 int main(int argc, char* argv[])
 {
 	QApplication app(argc, argv);
+
+
+	const QScreen& screen = *app.primaryScreen();
+
+	std::cout << "screen DPI = " << screen.physicalDotsPerInch() << std::endl;
+	std::cout << "screen Logical DPI = " << screen.logicalDotsPerInch() << std::endl;
+
+	if ( screen.logicalDotsPerInch() < screen.physicalDotsPerInch())
+	{
+		std::cout << "you idiot! stupid dumb! Go fuck you self, have't you see the font tooo small for you?" << std::endl;
+	}
+
+	if( screen.devicePixelRatio() != 1.0)
+	{
+		std::exit(1);
+	}
 
 	// argv[1] should by the url to play
  	std::string bilibili_url = argv[1];

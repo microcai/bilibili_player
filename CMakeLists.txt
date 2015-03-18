@@ -3,6 +3,9 @@ set(CMAKE_CXX_STANDARD 11)
 
 project(bilibili)
 
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+
+
 add_definitions(-DMODULE_STRING="bilibili" -DMODULE_NAME=bilibili)
 
 add_definitions(-D_FILE_OFFSET_BITS=64 -D_REENTRANT -D_THREAD_SAFE)

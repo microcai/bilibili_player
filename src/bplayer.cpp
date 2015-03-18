@@ -14,8 +14,11 @@
 #include <QLabel>
 #include <QGraphicsDropShadowEffect>
 #include <QGraphicsProxyWidget>
+#include <QApplication>
 #include <QPropertyAnimation>
 #include <QGraphicsSvgItem>
+#include <QScreen>
+#include <QToolTip>
 
 #include <boost/regex.hpp>
 
@@ -30,8 +33,8 @@ public:
 	{
 	}
 
-    virtual void keyPressEvent(QKeyEvent* event){}
-    virtual void keyReleaseEvent(QKeyEvent* event){}
+//     virtual void keyPressEvent(QKeyEvent* event){ event->accept();}
+//     virtual void keyReleaseEvent(QKeyEvent* event){event->accept();}
 };
 
 static Moving_Comments to_comments(const QDomDocument& barrage)
@@ -149,8 +152,11 @@ void BPlayer::start_play()
 
 	m_mainwindow->setPalette(palette);
 
+	graphicsView->setFrameShape(QFrame::NoFrame);
+	graphicsView->setFrameShadow(QFrame::Plain);
 
 	videoItem = new QGraphicsVideoItem;
+
 	videoItem->setSize(QSizeF(640, 480));
 
 	scene->addItem(videoItem);
@@ -262,6 +268,7 @@ void BPlayer::add_barrage(const Moving_Comment& c)
 	danmu->setGraphicsEffect(effect);
 
 	QVariantAnimation *animation = new QVariantAnimation(danmu);
+	connect(animation, SIGNAL(finished()), label, SLOT(deleteLater()));
 	connect(animation, SIGNAL(finished()), danmu, SLOT(deleteLater()));
 
 	animation->setStartValue(vsize.width());
@@ -277,7 +284,7 @@ void BPlayer::add_barrage(const Moving_Comment& c)
 		// 应该开始寻找替代位置
 		for (int guessY = 6; guessY < vsize.height() * 0.7 ; guessY++)
 		{
-			QRect rect(vsize.width() - 5, guessY, 6, danmu->size().height()+2);
+			QRect rect(vsize.width() - danmu->size().width() * 0.7, guessY, danmu->size().width(), danmu->size().height()+2);
 			auto items = graphicsView->items(rect, Qt::IntersectsItemShape);
 
 			items.removeAll(videoItem);
@@ -294,16 +301,27 @@ void BPlayer::add_barrage(const Moving_Comment& c)
 					break;
 				}
 			}
+
+			auto bottom_item_it  = std::max_element(items.begin(), items.end(), [](QGraphicsItem* itema,QGraphicsItem* itemb){
+				return itema->boundingRect().bottom() < itemb->boundingRect().bottom();
+			});
+
+			if (bottom_item_it != items.end())
+			{
+				lastY = (*bottom_item_it)->boundingRect().bottom();
+			}
+
+// 			QApplication::processEvents();
 		}
 	}
-
-	if ( lastY > vsize.height()*0.66)
-		lastY = 0;
 
 	danmu->setX(vsize.width());
 	danmu->setY(preferedY);
 
 	animation->start();
+
+	if ( lastY > vsize.height()*0.66)
+		lastY = 0;
 }
 
 void BPlayer::drag_slide(int p)
@@ -358,6 +376,24 @@ void BPlayer::positionChanged(qint64 position)
 	quint64 real_pos = map_position_from_media(position);
 	if (_drag_positoin == -1)
 		position_slide->setValue(real_pos);
+
+	// 更改 tooltip
+
+	auto current_play_time = QString("%1:%2:%3").arg(((real_pos/1000)/60)/60)
+		.arg(QString::fromStdString(std::to_string(((real_pos/1000)/60) % 60)), 2, QChar('0'))
+		.arg(QString::fromStdString(std::to_string((real_pos/1000) % 60)), 2, QChar('0'));
+
+	bool tooltip_changed = position_slide->toolTip() != current_play_time;
+	position_slide->setToolTip(current_play_time);
+
+	if (tooltip_changed && position_slide->underMouse())
+	{
+		QToolTip::hideText();
+
+// 		QPoint tooltip_pos = m_mainwindow->mapFromGlobal(QCursor::pos());
+		QToolTip::showText(QCursor::pos(), position_slide->toolTip());
+	}
+
 
 	// 播放弹幕.
 
@@ -538,16 +574,15 @@ void BPlayer::toogle_play_pause()
 
 			// display 一个 pause 图标
 
-			delete play_indicator;
-			play_indicator = nullptr;
-			delete pause_indicator;
+			play_indicator.reset();
+			pause_indicator.reset();
 
 			QGraphicsSvgItem * svg_item = new QGraphicsSvgItem("://res/pause.svg");
-			pause_indicator = svg_item;
+			pause_indicator.reset(svg_item);
 
 			//svg_label->
 
-			scene->addItem(pause_indicator);
+			scene->addItem(pause_indicator.get());
 
 			auto effect = new QGraphicsOpacityEffect;
 
@@ -586,14 +621,13 @@ void BPlayer::toogle_play_pause()
 		{
 			vplayer->play();
 
-			delete pause_indicator;
-			delete play_indicator;
-			pause_indicator = nullptr;
+			pause_indicator.reset();
+			play_indicator.reset();
 
 			QGraphicsSvgItem * svg_item = new QGraphicsSvgItem("://res/play.svg");
-			play_indicator = svg_item;
+			play_indicator.reset(svg_item);
 
-			scene->addItem(play_indicator);
+			scene->addItem(play_indicator.get());
 
 			auto effect = new QGraphicsOpacityEffect;
 
@@ -643,11 +677,8 @@ void BPlayer::toogle_play_pause()
 
 			ani_group->addAnimation(ani_group_2);
 
-			connect(ani_group, SIGNAL(finished()), ani_group, SLOT(deleteLater()));
-			connect(ani_group, &QAbstractAnimation::finished , [this](){
-				delete play_indicator;
-				play_indicator = nullptr;
-			});
+			connect(ani_group, &QAbstractAnimation::finished , this, [this](){play_indicator.reset();});
+			connect(ani_group, SIGNAL(finished()), ani_group, SLOT(deleteLater()), Qt::QueuedConnection);
 
 			play_indicator->setX(video_size.width() * zoom_level / 2 - svg_item->boundingRect().size().width()/2);
 			play_indicator->setY(video_size.height() * zoom_level / 2 - svg_item->boundingRect().size().height()/2);

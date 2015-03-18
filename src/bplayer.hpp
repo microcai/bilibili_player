@@ -1,6 +1,8 @@
 
 #pragma once
 
+#include <memory>
+
 #include <QObject>
 #include <QShortcut>
 #include <QMainWindow>
@@ -104,8 +106,8 @@ private:
 	QMediaPlayer* vplayer;
 	QGraphicsVideoItem* videoItem;
 
-	QGraphicsItem* play_indicator = nullptr;
-	QGraphicsItem* pause_indicator = nullptr;
+	std::unique_ptr<QGraphicsItem> play_indicator;
+	std::unique_ptr<QGraphicsItem> pause_indicator;
 
 	QSlider * position_slide;
 

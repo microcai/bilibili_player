@@ -17,7 +17,7 @@ ScreenSaverInhibitor::ScreenSaverInhibitor(const std::string& appname, const std
 		if (reply.isValid())
 		{
 			m_cookie = reply.value();
-		}
+		} 
 	}
 }
 

@@ -1,7 +1,14 @@
 
 qt5_add_resources(RC_SRCS ../bilibili.qrc)
 
-add_executable(bilibili_player ${RC_SRCS} main.cpp bplayer.hpp bplayer.cpp bilibilires.cpp acfunres.cpp screensaverinhibitor.cpp)
+add_executable(bilibili_player
+	${RC_SRCS}
+	main.cpp
+	bplayer.hpp
+	bplayer.cpp
+	bilibilires.cpp
+	acfunres.cpp
+	screensaverinhibitor.cpp)
 
 set_target_properties(bilibili_player PROPERTIES AUTOMOC ON)
 
