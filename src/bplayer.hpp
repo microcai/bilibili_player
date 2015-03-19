@@ -117,7 +117,7 @@ private:
 	VideoURLs urls;
 
 	QSizeF video_size;
-	double zoom_level = 2.0;
+	double zoom_level = qQNaN();
 	int lastY = 0;
 
 	int _drag_positoin = -1;

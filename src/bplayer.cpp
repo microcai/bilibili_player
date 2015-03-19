@@ -19,6 +19,7 @@
 #include <QGraphicsSvgItem>
 #include <QScreen>
 #include <QToolTip>
+#include <QDesktopWidget>
 
 #ifdef HAVE_KF5_WINDOWSYSTEM
 #include <KWindowSystem>
@@ -256,7 +257,9 @@ void BPlayer::add_barrage(const Moving_Comment& c)
 	label->setFont(font);
 	label->setPalette(palatte);
 
-	auto vsize = video_size * zoom_level;
+	auto vsize = video_size;
+	if (!qIsNaN(zoom_level))
+		vsize = video_size * zoom_level;
 
 	auto effect =  new QGraphicsDropShadowEffect();
 	effect->setOffset(3);
@@ -443,7 +446,10 @@ void BPlayer::adjust_window_size()
 
 	qApp->processEvents();
 
-	auto widget_size = video_size * zoom_level;
+	auto widget_size = video_size;
+	if (!qIsNaN(zoom_level))
+		widget_size = video_size * zoom_level;
+
 	videoItem->setSize(widget_size);
 
 	position_slide->setGeometry(0, widget_size.height(), widget_size.width(), position_slide->geometry().height());
@@ -525,14 +531,21 @@ void BPlayer::slot_metaDataChanged(QString key, QVariant v)
 	{
 		video_size = v.toSize();
 
-		if ( play_list->currentIndex() == 0 )
+		if (qIsNaN(zoom_level))
 		{
-			if (video_size.height() < 600 )
-				zoom_level = 3.0;
-			if (video_size.height() < 500 )
-				zoom_level = 4.0;
-			if (video_size.height() < 300 )
-				zoom_level = 5.0;
+			// 根据屏幕大小决定默认的缩放比例.
+			QSize desktopsize = qApp->desktop()->availableGeometry().size();
+
+			zoom_level = qMin(
+				desktopsize.height() / video_size.height()
+				,
+				desktopsize.width() / video_size.width()
+			);
+
+			if (zoom_level <= 1.0)
+				zoom_level = 1.0;
+			else
+				zoom_level = (long)(zoom_level);
 
 			ZoomLevelChanged(zoom_level);
 		}
