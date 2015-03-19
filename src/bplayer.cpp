@@ -29,18 +29,6 @@
 #include "bplayer.hpp"
 #include "bilibilires.hpp"
 
-class myQGraphicsView : public QGraphicsView
-{
-public:
-    myQGraphicsView(QGraphicsScene *scene, QWidget *parent = 0)
-		:QGraphicsView(scene, parent)
-	{
-	}
-
-//     virtual void keyPressEvent(QKeyEvent* event){ event->accept();}
-//     virtual void keyReleaseEvent(QKeyEvent* event){event->accept();}
-};
-
 static Moving_Comments to_comments(const QDomDocument& barrage)
 {
 	Moving_Comments m_comments;
@@ -137,7 +125,9 @@ void BPlayer::start_play()
 	m_mainwindow = new QMainWindow;
 
 	scene = new QGraphicsScene(m_mainwindow);
-	graphicsView = new myQGraphicsView(scene);
+	graphicsView = new QGraphicsView(scene);
+
+	graphicsView->setFocusPolicy(Qt::NoFocus);
 
 	graphicsView->setCacheMode(QGraphicsView::CacheNone);
 	graphicsView->setViewportUpdateMode(QGraphicsView::FullViewportUpdate);
