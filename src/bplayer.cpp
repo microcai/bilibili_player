@@ -136,7 +136,6 @@ void BPlayer::start_play()
 	// now start playing!
 	m_mainwindow = new QMainWindow;
 
-
 	scene = new QGraphicsScene(m_mainwindow);
 	graphicsView = new myQGraphicsView(scene);
 
@@ -169,7 +168,6 @@ void BPlayer::start_play()
 
 	position_slide->setOrientation(Qt::Horizontal);
 
-// 	position_slide->setEnabled(false);
 
 	scene->addWidget(position_slide);
 
@@ -468,8 +466,7 @@ void BPlayer::adjust_window_size()
 
 	auto adjusted_size = graphicsView->minimumSizeHint();
 
-
-
+	m_mainwindow->adjustSize();
 }
 
 void BPlayer::zoom_in()
