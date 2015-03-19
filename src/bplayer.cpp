@@ -169,6 +169,8 @@ void BPlayer::start_play()
 
 	position_slide->setOrientation(Qt::Horizontal);
 
+// 	position_slide->setEnabled(false);
+
 	scene->addWidget(position_slide);
 
 	// create phonon
@@ -190,6 +192,7 @@ void BPlayer::start_play()
 
 	connect(vplayer, SIGNAL(metaDataChanged(QString,QVariant)), this, SLOT(slot_metaDataChanged(QString,QVariant)));
 	connect(vplayer, SIGNAL(stateChanged(QMediaPlayer::State)), this, SLOT(play_state_changed(QMediaPlayer::State)));
+	connect(vplayer, SIGNAL(mediaStatusChanged(QMediaPlayer::MediaStatus)), this, SLOT(slot_mediaStatusChanged(QMediaPlayer::MediaStatus)));
 
 	connect(play_list, SIGNAL(currentIndexChanged(int)), this, SLOT(slot_mediaChanged(int)));
 
@@ -244,6 +247,10 @@ void BPlayer::start_play()
 
 	shortcut = new QShortcut(QKeySequence(Qt::CTRL + Qt::Key_Left), m_mainwindow);
 	connect(shortcut, SIGNAL(activated()), this, SLOT(fast_backwork()));
+
+	video_size = QSizeF(1,1);
+
+	adjust_window_size();
 }
 
 void BPlayer::add_barrage(const Moving_Comment& c)
@@ -443,6 +450,11 @@ void BPlayer::durationChanged(qint64 duration)
 
 void BPlayer::adjust_window_size()
 {
+	auto origin_gemetry = m_mainwindow->geometry();
+	m_mainwindow->setGeometry(origin_gemetry.x(), origin_gemetry.y(),1,1);
+
+	qApp->processEvents();
+
 	auto widget_size = video_size * zoom_level;
 	videoItem->setSize(widget_size);
 
@@ -453,6 +465,11 @@ void BPlayer::adjust_window_size()
 	player_visiable_area_size.rheight() += position_slide->geometry().height();
 
 	graphicsView->setFixedSize(player_visiable_area_size.toSize());
+
+	auto adjusted_size = graphicsView->minimumSizeHint();
+
+
+
 }
 
 void BPlayer::zoom_in()
@@ -725,3 +742,31 @@ void BPlayer::play_state_changed(QMediaPlayer::State state)
 		}
 	}
 }
+
+void BPlayer::slot_mediaStatusChanged(QMediaPlayer::MediaStatus status)
+{
+	switch(status)
+	{
+		case QMediaPlayer::BufferedMedia:;
+// 			position_slide->setEnabled(true);
+		case QMediaPlayer::StalledMedia:
+		{
+			// 试试看切换到备用 url
+
+			VideoURL& url = urls[play_list->currentIndex()];
+
+			if (url.backup_urls.size() >= 1)
+			{
+				auto cindex = play_list->currentIndex();
+				play_list->insertMedia(play_list->nextIndex(), QUrl(QString::fromStdString(url.backup_urls[0])));
+				play_list->removeMedia(cindex);
+
+				// 删掉已经使用的备用 url
+				url.backup_urls.erase(url.backup_urls.begin());
+
+				play_list->setCurrentIndex(cindex);
+			}
+		}
+	}
+}
+

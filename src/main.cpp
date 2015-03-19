@@ -10,6 +10,9 @@ int main(int argc, char* argv[])
 {
 	QApplication app(argc, argv);
 
+	QIcon exe_icon(":/ui/bilibili.ico");
+
+	app.setWindowIcon(exe_icon);
 
 	const QScreen& screen = *app.primaryScreen();
 
@@ -23,6 +26,7 @@ int main(int argc, char* argv[])
 
 	if( screen.devicePixelRatio() != 1.0)
 	{
+		std::cout << "do not set devicePixelRatio, you idiot" << std::endl;
 		std::exit(1);
 	}
 

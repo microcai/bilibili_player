@@ -88,6 +88,7 @@ private Q_SLOTS:
 
 	void play_state_changed(QMediaPlayer::State);
     void slot_full_screen_mode_changed(bool);
+	void slot_mediaStatusChanged(QMediaPlayer::MediaStatus);
 
 	void fast_forward(); // call this to forward one minite/2
 
