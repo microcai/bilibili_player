@@ -6,8 +6,14 @@
 #include <QGraphicsScene>
 #include <QGraphicsObject>
 #include <QLabel>
+#include <QElapsedTimer>
 
 #include <LinearMath/btAlignedObjectArray.h>
+#include <LinearMath/btDefaultMotionState.h>
+#include <BulletCollision/CollisionShapes/btStaticPlaneShape.h>
+
+#include <BulletDynamics/Dynamics/btRigidBody.h>
+#include <BulletDynamics/Character/btCharacterControllerInterface.h>
 
 class btDefaultCollisionConfiguration;
 class btCollisionDispatcher;
@@ -38,9 +44,14 @@ private:
 	std::shared_ptr<btConstraintSolver> m_constrantsolver;
 	std::shared_ptr<btDiscreteDynamicsWorld> m_world;
 
+	btStaticPlaneShape m_ground_shape;
+	btDefaultMotionState m_ground_motion;
+	btRigidBody m_ground_body;
 
 	btAlignedObjectArray<std::unique_ptr<btCollisionShape*>> m_collisonshapes;
 
 	QThread m_sim_thread;
+
+	QElapsedTimer m_elapsedtimer;
 };
 

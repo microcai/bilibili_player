@@ -263,21 +263,27 @@ void BPlayer::add_barrage(const Moving_Comment& c)
 
 	QGraphicsTextItem * danmu = scene->addText(QString::fromStdString(c.content));
 
+
 	danmu->setFont(font);
 	danmu->setDefaultTextColor(c.font_color);
 
 	danmu->setGraphicsEffect(effect);
 
-	danmu->adjustSize();
+// 	danmu->adjustSize();
 
 	auto preferedY = lastY += danmu->boundingRect().height() + 2;
+
+	auto textWidth = danmu->boundingRect().width();
+
+// 	danmu->setTransformOriginPoint(danmu->boundingRect().center());
+//
 
 	if ( lastY > vsize.height() * 0.22)
 	{
 		// 应该开始寻找替代位置
 		for (int guessY = 6; guessY < vsize.height() * 0.7 ; guessY++)
 		{
-			QRect rect(vsize.width() - danmu->textWidth() * 0.7, guessY, danmu->textWidth(), danmu->boundingRect().height() +2);
+			QRect rect(vsize.width() - textWidth * 0.7, guessY, textWidth, danmu->boundingRect().height() +2);
 			auto items = graphicsView->items(rect, Qt::IntersectsItemShape);
 
 			items.removeAll(videoItem);
