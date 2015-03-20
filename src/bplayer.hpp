@@ -4,6 +4,7 @@
 #include <memory>
 
 #include <QObject>
+#include <QPointer>
 #include <QShortcut>
 #include <QMainWindow>
 
@@ -20,6 +21,7 @@
 
 #include "screensaverinhibitor.hpp"
 #include "defs.hpp"
+#include "danmumanager.hpp"
 
 class BPlayer : public QObject
 {
@@ -107,8 +109,8 @@ private:
 	QMediaPlayer* vplayer;
 	QGraphicsVideoItem* videoItem;
 
-	std::unique_ptr<QGraphicsItem> play_indicator;
-	std::unique_ptr<QGraphicsItem> pause_indicator;
+	QPointer<QGraphicsObject> play_indicator;
+	QPointer<QGraphicsObject> pause_indicator;
 
 	QSlider * position_slide;
 
@@ -123,4 +125,6 @@ private:
 	int _drag_positoin = -1;
 
 	QScopedPointer<ScreenSaverInhibitor> m_screesave_inhibitor;
+
+	DanmuManager m_danmumgr;
 };
