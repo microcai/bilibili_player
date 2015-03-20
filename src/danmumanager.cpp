@@ -61,19 +61,12 @@ public:
 
 DanmuManager::DanmuManager(QObject* parent)
 	: QObject(parent)
+	, m_CollisionDispatcher(&m_btCollisionConfiguration)
 	, m_ground_shape(btVector3(0,0,-1),1)
 	, m_ground_body(0, &m_ground_motion, &m_ground_shape)
+	, m_world(&m_CollisionDispatcher, &m_overlappingPairCache, &m_constrantsolver, &m_btCollisionConfiguration)
 {
-	btCollisionConfiguration.reset(new btDefaultCollisionConfiguration);
-	m_CollisionDispatcher.reset(new btCollisionDispatcher(btCollisionConfiguration.get()));
-
-	m_overlappingPairCache.reset(new btDbvtBroadphase);
-
-	m_constrantsolver.reset(new btSequentialImpulseConstraintSolver);
-
-	m_world.reset(new btDiscreteDynamicsWorld(m_CollisionDispatcher.get(), m_overlappingPairCache.get(), m_constrantsolver.get(), btCollisionConfiguration.get()));
-
-	m_world->setGravity(btVector3(0.0, 0.0, 10));
+	m_world.setGravity(btVector3(0.0, 0.0, 10));
 
 	// 设定大地
 
@@ -83,7 +76,7 @@ DanmuManager::DanmuManager(QObject* parent)
 
 	m_ground_body.setContactProcessingThreshold(4);
 
-	m_world->addRigidBody(&m_ground_body);
+	m_world.addRigidBody(&m_ground_body);
 
 	QTimer * ter = new QTimer(this);
 	connect(ter, SIGNAL(timeout()), this, SLOT(iteration()));
@@ -111,7 +104,7 @@ void DanmuManager::iteration()
 
 	if (sender_timer)
 	{
-		m_world->stepSimulation(m_elapsedtimer.elapsed()/1000., 10);
+		m_world.stepSimulation(m_elapsedtimer.elapsed()/1000., 10);
 	}
 
 	m_elapsedtimer.restart();
@@ -120,16 +113,15 @@ void DanmuManager::iteration()
 	{
 		auto dx = budy->getCenterOfMassPosition().getX();
 
-		if (budy->getLinearVelocity().getX() > - 50)
+		if (budy->getLinearVelocity().getX() > - 100)
 			budy->setDamping(0.1, 0);
-
 
 		if (dx > video_width)
 			continue;
 
-		if (budy->getLinearVelocity().getX() > - 50)
+		if (budy->getLinearVelocity().getX() > - 100)
 			budy->applyCentralImpulse(btVector3(-100, 0, 0));
-		else if (budy->getLinearVelocity().getX() < -200)
+		else if (budy->getLinearVelocity().getX() < -250)
 			budy->applyCentralImpulse(btVector3(200, 0, 0));
 	}
 }
@@ -156,7 +148,7 @@ void DanmuManager::add_danmu(QGraphicsObject* danmuitem)
 	danmu_body->setDamping(11, 0);
 
 	// 好，加入 bullet 系统.
-	m_world->addRigidBody(danmu_body);
+	m_world.addRigidBody(danmu_body);
 
 	danmu_body->setLinearVelocity(btVector3(-80, 0, 80));
 
@@ -169,7 +161,7 @@ void DanmuManager::add_danmu(QGraphicsObject* danmuitem)
 	connect(danmuitem, &QObject::destroyed, danmuitem, [=](QObject *)
 	{
 		// 从世界删除
-		m_world->removeRigidBody(danmu_body);
+		m_world.removeRigidBody(danmu_body);
 		m_collisonshapes.erase(std::find(m_collisonshapes.begin(), m_collisonshapes.end(), danmu_body));
 
 		delete danmu_body;

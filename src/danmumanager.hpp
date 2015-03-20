@@ -13,14 +13,10 @@
 #include <BulletCollision/CollisionShapes/btStaticPlaneShape.h>
 
 #include <BulletDynamics/Dynamics/btRigidBody.h>
-#include <BulletDynamics/Character/btCharacterControllerInterface.h>
-
-class btDefaultCollisionConfiguration;
-class btCollisionDispatcher;
-class btBroadphaseInterface;
-class btConstraintSolver;
-class btDiscreteDynamicsWorld;
-class btCollisionShape;
+#include <BulletDynamics/Dynamics/btDiscreteDynamicsWorld.h>
+#include <BulletCollision/CollisionDispatch/btDefaultCollisionConfiguration.h>
+#include <BulletCollision/BroadphaseCollision/btDbvtBroadphase.h>
+#include <BulletDynamics/ConstraintSolver/btSequentialImpulseConstraintSolver.h>
 
 class DanmuManager : public QObject
 {
@@ -38,11 +34,11 @@ protected Q_SLOTS:
 
 private:
 
-	std::shared_ptr<btDefaultCollisionConfiguration> btCollisionConfiguration;
-	std::shared_ptr<btCollisionDispatcher> m_CollisionDispatcher;
-	std::shared_ptr<btBroadphaseInterface> m_overlappingPairCache;
-	std::shared_ptr<btConstraintSolver> m_constrantsolver;
-	std::shared_ptr<btDiscreteDynamicsWorld> m_world;
+	btDefaultCollisionConfiguration m_btCollisionConfiguration;
+	btCollisionDispatcher m_CollisionDispatcher;
+	btDbvtBroadphase m_overlappingPairCache;
+	btSequentialImpulseConstraintSolver m_constrantsolver;
+	btDiscreteDynamicsWorld m_world;
 
 	btStaticPlaneShape m_ground_shape;
 	btDefaultMotionState m_ground_motion;

@@ -492,7 +492,7 @@ void BPlayer::adjust_window_size()
 
 	m_mainwindow->adjustSize();
 
-	scene->setSceneRect(player_visiable_area_size);
+	scene->setSceneRect(QRectF(QPointF(), player_visiable_area_size));
 
 	m_danmumgr.video_width = video_size.width();
 
