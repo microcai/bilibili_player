@@ -26,10 +26,6 @@ struct danmuMotionState : public btMotionState
 	{
 		m_cached = centerOfMassWorldTrans;
 
-		if (budy->getLinearVelocity().getX() > - 50)
-			budy->applyCentralImpulse(btVector3(-100, 0, 0));
-
-
 		// 将物体绘制到 scene
 		if(m_reperentor)
 		{
@@ -38,27 +34,10 @@ struct danmuMotionState : public btMotionState
 			auto dx = centerOfMassWorldTrans.getOrigin().getX();
 			auto dy = centerOfMassWorldTrans.getOrigin().getY();
 
-			if (budy->getLinearVelocity().getX() < -200 && dx < 1280*2)
-				budy->applyDamping(1);
-
-
 			qtrans.translate(dx, dy);
 
-// 			qtrans.rotateRadians(centerOfMassWorldTrans.getRotation().getAngle());
 
 			qreal dz = centerOfMassWorldTrans.getOrigin().getZ();
-
-			qreal scale;
-
-
-			scale = (( dz - 0 ) / -100);
-
-			if ( scale < 0.3 )
-				scale = 0.3;
-			if (scale > 1.5)
-				scale = 1.5;
-
-//  			qtrans.scale(scale, scale);
 
 			m_reperentor->setTransform(qtrans);
 
@@ -113,7 +92,7 @@ DanmuManager::DanmuManager(QObject* parent)
 
 	m_sim_thread.start();
 
-	ter->moveToThread(&m_sim_thread);
+// 	ter->moveToThread(&m_sim_thread);
 	//  50fps 已经很流畅了
 	ter->setInterval(1000/50);
 	ter->start();
@@ -136,6 +115,23 @@ void DanmuManager::iteration()
 	}
 
 	m_elapsedtimer.restart();
+
+	for(btRigidBody* budy : m_collisonshapes)
+	{
+		auto dx = budy->getCenterOfMassPosition().getX();
+
+		if (budy->getLinearVelocity().getX() > - 50)
+			budy->setDamping(0.1, 0);
+
+
+		if (dx > video_width)
+			continue;
+
+		if (budy->getLinearVelocity().getX() > - 50)
+			budy->applyCentralImpulse(btVector3(-100, 0, 0));
+		else if (budy->getLinearVelocity().getX() < -200)
+			budy->applyCentralImpulse(btVector3(200, 0, 0));
+	}
 }
 
 void DanmuManager::add_danmu(QGraphicsObject* danmuitem)
@@ -144,12 +140,12 @@ void DanmuManager::add_danmu(QGraphicsObject* danmuitem)
 	btScalar mass =item_size.height() * item_size.width();
 	auto myMotionState = new danmuMotionState(danmuitem);
 
-	auto colShape = new btCapsuleShape(item_size.height()/2, item_size.width());
+	auto colShape = new btCapsuleShape(item_size.height()/2, item_size.width() - item_size.height() );
 
-	colShape->setLocalScaling(btVector3(1,1,0.3));
+	colShape->setLocalScaling(btVector3(1,1,10));
 
 	btVector3 localInertia(0,0,0);
-	colShape->calculateLocalInertia(mass,localInertia);
+	colShape->calculateLocalInertia(1,localInertia);
 
 	btRigidBody::btRigidBodyConstructionInfo rbInfo(1, myMotionState, colShape, localInertia);
 
@@ -157,7 +153,7 @@ void DanmuManager::add_danmu(QGraphicsObject* danmuitem)
 
 	myMotionState->budy = danmu_body;
 
-	danmu_body->setDamping(0.1, 0);
+	danmu_body->setDamping(11, 0);
 
 	// 好，加入 bullet 系统.
 	m_world->addRigidBody(danmu_body);
@@ -168,14 +164,18 @@ void DanmuManager::add_danmu(QGraphicsObject* danmuitem)
 
 	danmu_body->setAngularFactor(btVector3(0,0,0));
 
-	danmu_body->applyCentralImpulse(btVector3(-8000, 0, 0));
+	danmu_body->applyCentralImpulse(btVector3(-4000, 0, 0));
 
-	connect(danmuitem, &QObject::destroyed, danmuitem, [=](QObject *){
+	connect(danmuitem, &QObject::destroyed, danmuitem, [=](QObject *)
+	{
 		// 从世界删除
 		m_world->removeRigidBody(danmu_body);
+		m_collisonshapes.erase(std::find(m_collisonshapes.begin(), m_collisonshapes.end(), danmu_body));
 
 		delete danmu_body;
 		delete myMotionState;
 		delete colShape;
 	});
+
+	m_collisonshapes.push_back(danmu_body);
 }

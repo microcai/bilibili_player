@@ -48,10 +48,12 @@ private:
 	btDefaultMotionState m_ground_motion;
 	btRigidBody m_ground_body;
 
-	btAlignedObjectArray<std::unique_ptr<btCollisionShape*>> m_collisonshapes;
+	std::vector<btRigidBody*> m_collisonshapes;
 
 	QThread m_sim_thread;
 
 	QElapsedTimer m_elapsedtimer;
+public:
+	int video_width;
 };
 

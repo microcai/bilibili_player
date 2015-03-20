@@ -491,6 +491,13 @@ void BPlayer::adjust_window_size()
 	auto adjusted_size = graphicsView->minimumSizeHint();
 
 	m_mainwindow->adjustSize();
+
+	scene->setSceneRect(player_visiable_area_size);
+
+	m_danmumgr.video_width = video_size.width();
+
+	graphicsView->resetMatrix();
+	graphicsView->resetTransform();
 }
 
 void BPlayer::zoom_in()
