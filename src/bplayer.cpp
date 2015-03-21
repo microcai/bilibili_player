@@ -324,12 +324,11 @@ void BPlayer::add_barrage(const Moving_Comment& c)
 	static bool bullet_danmu;
 
 	bullet_danmu = ! bullet_danmu;
-
 // 	if (bullet_danmu)
-	{
-		m_danmumgr.add_danmu(danmu);
-		return;
-	}
+// 	{
+// 		m_danmumgr.add_danmu(danmu);
+// 		return;
+// 	}
 
 	QVariantAnimation *animation = new QVariantAnimation(danmu);
 	connect(animation, SIGNAL(finished()), danmu, SLOT(deleteLater()));
@@ -767,6 +766,7 @@ void BPlayer::play_state_changed(QMediaPlayer::State state)
 		case QMediaPlayer::PlayingState:
 		{
 			m_screesave_inhibitor.reset(new ScreenSaverInhibitor("bilibili-player", "playing videos"));
+			m_mainwindow->raise();
 			break;
 		}
 		case QMediaPlayer::PausedState:

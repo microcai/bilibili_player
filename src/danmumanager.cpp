@@ -14,7 +14,8 @@ struct danmuMotionState : public btMotionState
 	{
 		m_cached.setIdentity();
 		QTransform qtrans = m_reperentor->transform();
-		m_cached.setOrigin(btVector3(qtrans.dx() + 2000, qtrans.dy(), -18));
+		auto itemsize = m_reperentor->boundingRect();
+		m_cached.setOrigin(btVector3(qtrans.dx() + 2000, qtrans.dy(), itemsize.height() + 5));
 	}
 
 	virtual void getWorldTransform(btTransform& worldTrans) const
