@@ -275,8 +275,18 @@ void BPlayer::add_barrage(const Moving_Comment& c)
 
 	auto textWidth = danmu->boundingRect().width();
 
-// 	danmu->setTransformOriginPoint(danmu->boundingRect().center());
-//
+
+	if ( lastY > vsize.height()*0.66)
+		lastY = 0;
+
+	if (use_bullet)
+	{
+		QTransform qtrans;
+		qtrans.translate(vsize.width(), preferedY);
+		danmu->setTransform(qtrans);
+		m_danmumgr.add_danmu(danmu);
+		return;
+	}
 
 	if ( lastY > vsize.height() * 0.22)
 	{
@@ -309,24 +319,13 @@ void BPlayer::add_barrage(const Moving_Comment& c)
 			{
 				lastY = (*bottom_item_it)->boundingRect().bottom();
 			}
-
-// 			QApplication::processEvents();
 		}
 	}
+
 
 	QTransform qtrans;
 	qtrans.translate(vsize.width(), preferedY);
 	danmu->setTransform(qtrans);
-
-	if ( lastY > vsize.height()*0.66)
-		lastY = 0;
-
-
-	if (use_bullet)
-	{
-		m_danmumgr.add_danmu(danmu);
-		return;
-	}
 
 	QVariantAnimation *animation = new QVariantAnimation(danmu);
 	connect(animation, SIGNAL(finished()), danmu, SLOT(deleteLater()));
