@@ -36,6 +36,12 @@ public:
 
 	virtual ~BiliBiliRes(){};
 
+public Q_SLOTS:
+	void disable_video_url_extraction()
+	{
+		m_no_video = true;
+	}
+
 Q_SIGNALS:
 	void video_url_extracted(VideoURL);
 	void barrage_url_extracted(QString);
@@ -86,6 +92,7 @@ private Q_SLOTS:
 private:
 	std::string m_bilibili_url;
 	std::string cid, aid;
+	bool m_no_video = false;
 
 	QNetworkAccessManager m_netmgr;
 

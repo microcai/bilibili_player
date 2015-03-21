@@ -74,14 +74,24 @@ void BiliBiliRes::extract_aid_cid_stuff()
 
 void BiliBiliRes::slot_cid_extracted(QString cid)
 {
-    auto play_url = get_video_url(cid.toStdString());
+	if (m_no_video)
+	{
+		auto xml_url = get_comment_url(cid.toStdString());
+		std::cout << "getting barrage from : " << xml_url << std::endl;
 
-    std::cout << "getting playurl from : " << play_url << std::endl;
+		barrage_url_extracted(QString::fromStdString(xml_url));
 
-    // get aid and cid from url
-    QNetworkReply * reply = current_reply = m_netmgr.get(QNetworkRequest(QUrl(play_url.c_str())));
+	}else
+	{
+		auto play_url = get_video_url(cid.toStdString());
 
-    connect(reply, SIGNAL(finished()), this, SLOT(extract_flv_url()));
+		std::cout << "getting playurl from : " << play_url << std::endl;
+
+		// get aid and cid from url
+		QNetworkReply * reply = current_reply = m_netmgr.get(QNetworkRequest(QUrl(play_url.c_str())));
+
+		connect(reply, SIGNAL(finished()), this, SLOT(extract_flv_url()));
+	}
 }
 
 void BiliBiliRes::extract_flv_url()
