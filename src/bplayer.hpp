@@ -128,5 +128,5 @@ private:
 	QScopedPointer<ScreenSaverInhibitor> m_screesave_inhibitor;
 
 	DanmuManager m_danmumgr;
-	bool use_bullet;
+	bool use_bullet = false;
 };
