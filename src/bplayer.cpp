@@ -337,9 +337,6 @@ void BPlayer::add_barrage(const Moving_Comment& c)
 
 	connect(animation, &QVariantAnimation::valueChanged, danmu, [danmu](const QVariant& v)
 	{
-
-// 		danmu->setX(v.toReal());
-
 		auto dy = danmu->transform().dy();
 
 		QTransform qtrans;

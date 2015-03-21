@@ -7,29 +7,8 @@
 #include "bplayer.hpp"
 #include "bilibilires.hpp"
 
-int main(int argc, char* argv[])
+void fuckoff_low_dpi_screen(const QScreen* screen)
 {
-	QApplication app(argc, argv);
-    QCoreApplication::setApplicationName("bilibili player");
-    QCoreApplication::setApplicationVersion("0.9");
-
-	QIcon exe_icon(":/ui/bilibili.ico");
-
-	app.setWindowIcon(exe_icon);
-
-	QCommandLineParser cliparser;
-	cliparser.setApplicationDescription("bilibili 播放器");
-
-    cliparser.addHelpOption();
-    cliparser.addVersionOption();
-
-	cliparser.addOption({"use-bullet", "use bullet engine to manage danmaku"});
-	cliparser.addOption({"videourl", "alternative video url, useful for play local video file while still  be able to see danmaku", "uri"});
-
-	cliparser.process(app);
-
-	const QScreen* screen = app.primaryScreen();
-
 	std::cout << "screen DPI = " << screen->physicalDotsPerInch() << std::endl;
 	std::cout << "screen Logical DPI = " << screen->logicalDotsPerInch() << std::endl;
 
@@ -42,6 +21,38 @@ int main(int argc, char* argv[])
 	{
 		std::cout << "do not set devicePixelRatio, you idiot" << std::endl;
 		std::exit(1);
+	}
+}
+
+int main(int argc, char* argv[])
+{
+	QApplication app(argc, argv);
+	QCoreApplication::setApplicationName("bilibili player");
+	QCoreApplication::setApplicationVersion("0.9");
+
+	QIcon exe_icon(":/ui/bilibili.ico");
+
+	app.setWindowIcon(exe_icon);
+
+	QCommandLineParser cliparser;
+	cliparser.setApplicationDescription("bilibili 播放器");
+
+	cliparser.addHelpOption();
+	cliparser.addVersionOption();
+	cliparser.addOption({"about-qt", "display about-qt dialog"});
+	cliparser.addOption({"about", "display about dialog"});
+
+	cliparser.addOption({"use-bullet", "use bullet engine to manage danmaku"});
+	cliparser.addOption({"videourl", "alternative video url, useful for play local video file while still  be able to see danmaku", "uri"});
+
+	cliparser.process(app);
+
+	fuckoff_low_dpi_screen(app.primaryScreen());
+
+	if (cliparser.isSet("about-qt"))
+	{
+		app.aboutQt();
+		return 0;
 	}
 
 	// argv[1] should by the url to play
