@@ -26,6 +26,7 @@
 class BPlayer : public QObject
 {
 	Q_OBJECT
+	Q_PROPERTY(bool UseBullet MEMBER  use_bullet)
     Q_PROPERTY(double ZoomLevel READ ZoomLevel WRITE SetZoomLevel NOTIFY ZoomLevelChanged)
     Q_PROPERTY(double full_screen READ full_screen_mode WRITE set_full_screen_mode NOTIFY full_screen_mode_changed)
 
@@ -127,4 +128,5 @@ private:
 	QScopedPointer<ScreenSaverInhibitor> m_screesave_inhibitor;
 
 	DanmuManager m_danmumgr;
+	bool use_bullet;
 };

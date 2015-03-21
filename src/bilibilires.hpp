@@ -18,6 +18,9 @@
 class BiliBiliRes : public QObject
 {
 	Q_OBJECT
+
+	Q_PROPERTY(bool DoNotExtractVideoUrl MEMBER  m_no_video)
+
 public:
 	explicit BiliBiliRes(const std::string& bilibili_url)
 		: m_bilibili_url(bilibili_url)
@@ -35,12 +38,6 @@ public:
 	}
 
 	virtual ~BiliBiliRes(){};
-
-public Q_SLOTS:
-	void disable_video_url_extraction()
-	{
-		m_no_video = true;
-	}
 
 Q_SIGNALS:
 	void video_url_extracted(VideoURL);

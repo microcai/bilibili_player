@@ -321,14 +321,12 @@ void BPlayer::add_barrage(const Moving_Comment& c)
 	if ( lastY > vsize.height()*0.66)
 		lastY = 0;
 
-	static bool bullet_danmu;
 
-	bullet_danmu = ! bullet_danmu;
-// 	if (bullet_danmu)
-// 	{
-// 		m_danmumgr.add_danmu(danmu);
-// 		return;
-// 	}
+	if (use_bullet)
+	{
+		m_danmumgr.add_danmu(danmu);
+		return;
+	}
 
 	QVariantAnimation *animation = new QVariantAnimation(danmu);
 	connect(animation, SIGNAL(finished()), danmu, SLOT(deleteLater()));

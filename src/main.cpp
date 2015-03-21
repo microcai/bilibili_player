@@ -23,10 +23,10 @@ int main(int argc, char* argv[])
     cliparser.addHelpOption();
     cliparser.addVersionOption();
 
+	cliparser.addOption({"use-bullet", "use bullet engine to manage danmaku"});
 	cliparser.addOption({"videourl", "alternative video url, useful for play local video file while still  be able to see danmaku", "uri"});
 
 	cliparser.process(app);
-
 
 	const QScreen* screen = app.primaryScreen();
 
@@ -51,11 +51,16 @@ int main(int argc, char* argv[])
 
 	BPlayer player;
 
+	if (cliparser.isSet("use-bullet"))
+	{
+		player.setProperty("UseBullet", cliparser.value("use-bullet") != "no");
+	}
+
 	auto bilibili_res = new BiliBiliRes(bilibili_url.toStdString());
 
 	if (cliparser.isSet("videourl"))
 	{
-		bilibili_res->disable_video_url_extraction();
+		bilibili_res->setProperty("DoNotExtractVideoUrl", true);
 
 		VideoURL url;
 		url.url = cliparser.value("videourl").toStdString();
