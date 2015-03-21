@@ -334,7 +334,7 @@ void BPlayer::add_barrage(const Moving_Comment& c)
 	connect(animation, SIGNAL(finished()), danmu, SLOT(deleteLater()));
 
 	animation->setStartValue(vsize.width());
-	animation->setEndValue((qreal)0.0 - danmu->textWidth());
+	animation->setEndValue((qreal)0.0 - textWidth);
 	animation->setDuration(vsize.width() * 6);
 
 	connect(animation, &QVariantAnimation::valueChanged, danmu, [danmu](const QVariant& v)
