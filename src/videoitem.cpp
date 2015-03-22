@@ -46,6 +46,7 @@
 #include <QVideoSurfaceFormat>
 #include <QOpenGLFunctions>
 #include <QOpenGLPixelTransferOptions>
+#include <QOpenGLFunctions_2_0>
 
 #include <QDebug>
 #include <QGraphicsWidget>
@@ -58,8 +59,9 @@ class VideoPainter : public QOpenGLFunctions
 	}
 
 public:
-	virtual void paintGL(QSizeF viewport_size)
+	virtual void paintGL(QSizeF viewport_size, const QVideoFrame& framePaintee)
 	{
+		glEnable(GL_TEXTURE_2D);
 		m_program.bind();
 
 		m_texture_Y->bind(0);
@@ -70,19 +72,60 @@ public:
 		m_program.setUniformValue(m_program.uniformLocation("tex1"), 1);
 		m_program.setUniformValue(m_program.uniformLocation("tex2"), 2);
 
-		glBegin(GL_POLYGON);
-		glTexCoord2d(0,0);
-		glVertex2d(0,0);
+        const float txLeft = 0.0;
+        const float txRight = 1.0;
 
-		glTexCoord2d(1,0);
-		glVertex2d(viewport_size.width(), 0);
+        const float txTop = 0.0;
+        const float txBottom = 1.0;
 
-		glTexCoord2d(1,1);
-		glVertex2d(viewport_size.width(), viewport_size.height());
+        const GLdouble tx_array[] =
+        {
+            0.0 , 0.0,
+            1.0, 0.0,
+            1.0 , 1.1,
+            0.0, 1.0
+        };
 
-		glTexCoord2d(0,1);
-		glVertex2d(0, viewport_size.height());
-		glEnd();
+        const GLdouble v_array[] =
+        {
+            0.0     , 0.0,
+			viewport_size.width() +1.0   , 0.0,
+            viewport_size.width() + 1.0, viewport_size.height() + 1.0,
+
+            0.0, viewport_size.width() + 1.0,
+        };
+
+		// using this can avoid linking to OpenGL libraries
+		QOpenGLFunctions_2_0 glfunc;
+
+		glfunc.initializeOpenGLFunctions();
+
+		glfunc.glBegin(GL_POLYGON);
+		glfunc.glTexCoord2d(0,0);
+		glfunc.glVertex2d(0,0);
+
+		glfunc.glTexCoord2d(1,0);
+		glfunc.glVertex2d(viewport_size.width(), 0);
+
+		glfunc.glTexCoord2d(1,1);
+		glfunc.glVertex2d(viewport_size.width(), viewport_size.height());
+
+		glfunc.glTexCoord2d(0,1);
+		glfunc.glVertex2d(0, viewport_size.height());
+		glfunc.glEnd();
+
+
+
+// 		glfunc.glBegin();
+
+// 		glfunc.glVertexPointer(2, GL_DOUBLE, 0, v_array);
+//         glfunc.glTexCoordPointer(2, GL_DOUBLE, 0, tx_array);
+
+//       glEnableClientState(GL_VERTEX_ARRAY);
+//         glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+
+//         glDrawArrays(GL_POLYGON, 0, 4);
+// 		this->glDrawElements();
 
 		m_texture_Y->release();
 		m_texture_U->release();
@@ -203,7 +246,6 @@ void VideoItem::paintGL(QPainter* painter)
 	Q_ASSERT( QOpenGLContext::currentContext() );
 
 	painter->beginNativePainting();
-	glEnable(GL_TEXTURE_2D);
 
 	auto vsize = currentFrame.size();
 
@@ -215,7 +257,7 @@ void VideoItem::paintGL(QPainter* painter)
 		need_update_gltexture = false;
 	}
 
-	m_painter->paintGL(my_size);
+	m_painter->paintGL(my_size, currentFrame);
 	painter->endNativePainting();
 
 }
@@ -271,7 +313,8 @@ QList<QVideoFrame::PixelFormat> VideoItem::supportedPixelFormats(
 				<< QVideoFrame::Format_ARGB32_Premultiplied
 				<< QVideoFrame::Format_RGB565
 				<< QVideoFrame::Format_RGB555
-				<< QVideoFrame::Format_YUV420P;
+				<< QVideoFrame::Format_YUV420P
+				<< QVideoFrame::Format_NV12;
 	} else {
 		return QList<QVideoFrame::PixelFormat>();
 	}
