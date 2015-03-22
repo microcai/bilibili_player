@@ -14,10 +14,15 @@
 #include <QMediaPlayer>
 #include <QMediaPlaylist>
 #include <QVideoWidget>
+#include <QGraphicsItem>
+#include <QAbstractVideoSurface>
 #include <QGraphicsVideoItem>
 
 #include <QSlider>
 #include <QDomDocument>
+
+#include "customvideoitem/videoitem.hpp"
+
 
 #include "screensaverinhibitor.hpp"
 #include "defs.hpp"
@@ -27,6 +32,7 @@ class BPlayer : public QObject
 {
 	Q_OBJECT
 	Q_PROPERTY(bool UseBullet MEMBER  use_bullet)
+	Q_PROPERTY(bool UseOpenGL MEMBER  use_gl)
     Q_PROPERTY(double ZoomLevel READ ZoomLevel WRITE SetZoomLevel NOTIFY ZoomLevelChanged)
     Q_PROPERTY(double full_screen READ full_screen_mode WRITE set_full_screen_mode NOTIFY full_screen_mode_changed)
 
@@ -108,7 +114,9 @@ private:
 
 	QMediaPlaylist* play_list;
 	QMediaPlayer* vplayer;
-	QGraphicsVideoItem* videoItem;
+
+	QPointer<QGraphicsVideoItem> videoItem;
+	QPointer<VideoItem> video_surface;
 
 	QPointer<QGraphicsObject> play_indicator;
 	QPointer<QGraphicsObject> pause_indicator;
@@ -129,4 +137,5 @@ private:
 
 	DanmuManager m_danmumgr;
 	bool use_bullet = false;
+	bool use_gl = false;
 };

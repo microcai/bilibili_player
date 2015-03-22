@@ -20,6 +20,9 @@
 #include <QScreen>
 #include <QToolTip>
 #include <QDesktopWidget>
+#include <QOpenGLWidget>
+#include <QGraphicsVideoItem>
+#include <QSurfaceFormat>
 
 #ifdef HAVE_KF5_WINDOWSYSTEM
 #include <KWindowSystem>
@@ -152,11 +155,33 @@ void BPlayer::start_play()
 	graphicsView->setFrameShape(QFrame::NoFrame);
 	graphicsView->setFrameShadow(QFrame::Plain);
 
-	videoItem = new QGraphicsVideoItem;
+	vplayer = new QMediaPlayer;//(0, QMediaPlayer::VideoSurface);
 
-	videoItem->setSize(QSizeF(640, 480));
+	if (use_gl)
+	{
+		video_surface = new VideoItem;
+		auto glwidget = new QOpenGLWidget(m_mainwindow);
 
-	scene->addItem(videoItem);
+		QSurfaceFormat format;
+
+		format.setSwapBehavior(QSurfaceFormat::SingleBuffer);
+
+		glwidget->setFormat(format);
+
+		graphicsView->setViewport(glwidget);
+		video_surface->setSize(QSizeF(640, 480));
+		scene->addItem(video_surface);
+
+		vplayer->setVideoOutput(video_surface);
+
+	}else
+	{
+		videoItem = new QGraphicsVideoItem;
+		videoItem->setSize(QSizeF(640, 480));
+		scene->addItem(videoItem);
+
+		vplayer->setVideoOutput(videoItem);
+	}
 
 	position_slide = new QSlider;
 
@@ -165,11 +190,6 @@ void BPlayer::start_play()
 
 	scene->addWidget(position_slide);
 
-	// create phonon
-
-	vplayer = new QMediaPlayer(0, QMediaPlayer::VideoSurface);
-
-	vplayer->setVideoOutput(videoItem);
 
 	vplayer->setPlaylist(play_list);
 	m_mainwindow->show();
@@ -471,7 +491,11 @@ void BPlayer::adjust_window_size()
 	if (!qIsNaN(zoom_level))
 		widget_size = video_size * zoom_level;
 
-	videoItem->setSize(widget_size);
+	if (videoItem)
+		videoItem->setSize(widget_size);
+
+	if (video_surface)
+		video_surface->setSize(widget_size);
 
 	position_slide->setGeometry(0, widget_size.height(), widget_size.width(), position_slide->geometry().height());
 
@@ -537,7 +561,8 @@ void BPlayer::slot_full_screen_mode_changed(bool)
 		position_slide->hide();
 		m_mainwindow->setCursor(Qt::BlankCursor);
 		graphicsView->setCursor(Qt::BlankCursor);
-		videoItem->setCursor(Qt::BlankCursor);
+		if (videoItem)
+			videoItem->setCursor(Qt::BlankCursor);
 
 
 	}
@@ -546,8 +571,11 @@ void BPlayer::slot_full_screen_mode_changed(bool)
 		position_slide->show();
 		m_mainwindow->unsetCursor();
 		graphicsView->unsetCursor();
-		videoItem->unsetCursor();
-		videoItem->setCursor(Qt::ArrowCursor);
+
+		if (videoItem){
+			videoItem->unsetCursor();
+			videoItem->setCursor(Qt::ArrowCursor);
+		}
 		m_mainwindow->setCursor(Qt::ArrowCursor);
 		graphicsView->setCursor(Qt::ArrowCursor);
 	}

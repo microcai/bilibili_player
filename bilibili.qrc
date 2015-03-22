@@ -6,4 +6,7 @@
     <qresource prefix="/ui">
         <file>bilibili.ico</file>
     </qresource>
+    <qresource prefix="/glsl">
+        <file alias="yuv.frag">src/glsl/yuv.frag</file>
+    </qresource>
 </RCC>

@@ -44,6 +44,7 @@ int main(int argc, char* argv[])
 
 	cliparser.addOption({"use-bullet", "use bullet engine to manage danmaku"});
 	cliparser.addOption({"videourl", "alternative video url, useful for play local video file while still  be able to see danmaku", "uri"});
+	cliparser.addOption({"opengl", "using opengl to render the video"});
 
 	cliparser.process(app);
 
@@ -65,6 +66,11 @@ int main(int argc, char* argv[])
 	if (cliparser.isSet("use-bullet"))
 	{
 		player.setProperty("UseBullet", cliparser.value("use-bullet") != "no");
+	}
+
+	if (cliparser.isSet("opengl"))
+	{
+		player.setProperty("UseOpenGL", cliparser.value("opengl") != "no");
 	}
 
 	auto bilibili_res = new BiliBiliRes(bilibili_url.toStdString());
