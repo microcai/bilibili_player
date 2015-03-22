@@ -73,10 +73,12 @@ public:
 		float contrast = 1.0;
 		float saturation = 1.0;
 
+		// 把 设定传递给 shader 里的对应变量.
 		m_program.setUniformValue(m_program.uniformLocation("brightness"), brightness);
 		m_program.setUniformValue(m_program.uniformLocation("contrast"), contrast);
 		m_program.setUniformValue(m_program.uniformLocation("saturation"), saturation);
 
+		// 把 shader 里的 tex0 tex1 tex2变量 和 0号 1号 2号 三个纹理缓存绑定.
 		m_program.setUniformValue(m_program.uniformLocation("tex0"), 0);
 		m_program.setUniformValue(m_program.uniformLocation("tex1"), 1);
 		m_program.setUniformValue(m_program.uniformLocation("tex2"), 2);
