@@ -69,6 +69,14 @@ public:
 		m_texture_U->bind(1);
 		m_texture_V->bind(2);
 
+		float brightness = 1.0;
+		float contrast = 1.0;
+		float saturation = 1.0;
+
+		m_program.setUniformValue(m_program.uniformLocation("brightness"), brightness);
+		m_program.setUniformValue(m_program.uniformLocation("contrast"), contrast);
+		m_program.setUniformValue(m_program.uniformLocation("saturation"), saturation);
+
 		m_program.setUniformValue(m_program.uniformLocation("tex0"), 0);
 		m_program.setUniformValue(m_program.uniformLocation("tex1"), 1);
 		m_program.setUniformValue(m_program.uniformLocation("tex2"), 2);

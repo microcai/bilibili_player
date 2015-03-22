@@ -11,6 +11,12 @@ const vec3 Rcoeff = vec3(1.164,  0.000,  1.596);
 const vec3 Gcoeff = vec3(1.164, -0.391, -0.813);
 const vec3 Bcoeff = vec3(1.164,  2.018,  0.000);
 
+//brightness,对比度contrast,饱和度saturation 调整参数
+
+uniform float brightness;
+uniform float contrast;
+uniform float saturation;
+
 void main()
 {
     vec3 rgb, yuv;
@@ -20,7 +26,18 @@ void main()
 
     // Get the U and V values
     yuv.y = texture2D(tex1, tcoord).r;
+
     yuv.z = texture2D(tex2, tcoord).r;
+
+    float newY, newU, newV;
+
+    newY = ((yuv.x-0.5) * contrast + 0.5) * brightness;
+    newU = ((yuv.y-0.5) * saturation + 0.5);
+    newV = ((yuv.z-0.5) * saturation + 0.5);
+
+    yuv.x = clamp(newY, 0.0, 1.0);
+    yuv.y = clamp(newU, 0.0, 1.0);
+    yuv.z = clamp(newV, 0.0, 1.0);
 
     // Do the color transform
     yuv += offset;
