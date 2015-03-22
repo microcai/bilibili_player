@@ -80,58 +80,40 @@ public:
 
         const GLdouble tx_array[] =
         {
-            0.0 , 0.0,
+            0.0, 0.0,
             1.0, 0.0,
-            1.0 , 1.1,
+            1.0, 1.0,
             0.0, 1.0
         };
 
         const GLdouble v_array[] =
         {
             0.0     , 0.0,
-			viewport_size.width() +1.0   , 0.0,
+			viewport_size.width() + 1.0   , 0.0,
             viewport_size.width() + 1.0, viewport_size.height() + 1.0,
 
-            0.0, viewport_size.width() + 1.0,
+            0.0, viewport_size.height() + 1.0,
         };
 
 		// using this can avoid linking to OpenGL libraries
 		QOpenGLFunctions_2_0 glfunc;
 
 		glfunc.initializeOpenGLFunctions();
+		glfunc.glVertexPointer(2, GL_DOUBLE, 0, v_array);
+		glfunc.glTexCoordPointer(2, GL_DOUBLE, 0, tx_array);
 
-		glfunc.glBegin(GL_POLYGON);
-		glfunc.glTexCoord2d(0,0);
-		glfunc.glVertex2d(0,0);
+		glfunc.glEnableClientState(GL_VERTEX_ARRAY);
+		glfunc.glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 
-		glfunc.glTexCoord2d(1,0);
-		glfunc.glVertex2d(viewport_size.width(), 0);
+		glDrawArrays(GL_POLYGON, 0, 4);
 
-		glfunc.glTexCoord2d(1,1);
-		glfunc.glVertex2d(viewport_size.width(), viewport_size.height());
-
-		glfunc.glTexCoord2d(0,1);
-		glfunc.glVertex2d(0, viewport_size.height());
-		glfunc.glEnd();
-
-
-
-// 		glfunc.glBegin();
-
-// 		glfunc.glVertexPointer(2, GL_DOUBLE, 0, v_array);
-//         glfunc.glTexCoordPointer(2, GL_DOUBLE, 0, tx_array);
-
-//       glEnableClientState(GL_VERTEX_ARRAY);
-//         glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-
-//         glDrawArrays(GL_POLYGON, 0, 4);
-// 		this->glDrawElements();
+		glfunc.glDisableClientState(GL_VERTEX_ARRAY);
+		glfunc.glDisableClientState(GL_TEXTURE_COORD_ARRAY);
 
 		m_texture_Y->release();
 		m_texture_U->release();
 		m_texture_V->release();
 		m_program.release();
-
 
 	}
 
