@@ -570,7 +570,7 @@ void BPlayer::slot_full_screen_mode_changed(bool)
 		m_mainwindow->setCursor(Qt::ArrowCursor);
 		graphicsView->setCursor(Qt::ArrowCursor);
 
-		adjust_window_size();
+// 		adjust_window_size();
 	}
 }
 
