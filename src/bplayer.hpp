@@ -21,7 +21,7 @@
 #include <QSlider>
 #include <QDomDocument>
 
-#include "customvideoitem/videoitem.hpp"
+#include "videoitem.hpp"
 
 
 #include "screensaverinhibitor.hpp"

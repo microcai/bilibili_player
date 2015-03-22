@@ -38,17 +38,66 @@
 **
 ****************************************************************************/
 
-#include "videoplayer.h"
+#pragma once
 
-#include <QApplication>
+#include <QMutex>
+#include <QVideoSurfaceFormat>
+#include <QAbstractVideoSurface>
+#include <QGraphicsItem>
+#include <QOpenGLShaderProgram>
+#include <QOpenGLTexture>
 
-int main(int argc, char *argv[])
+class VideoPainter;
+class VideoItem : public QAbstractVideoSurface, public QGraphicsItem
 {
-    QApplication app(argc, argv);
+    Q_OBJECT
+    Q_INTERFACES(QGraphicsItem)
 
-    VideoPlayer player;
-    player.show();
+public:
+    explicit VideoItem(QGraphicsItem *parentItem = 0);
+    ~VideoItem();
 
-    return app.exec();
-}
+    QRectF boundingRect() const;
+    void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
+
+    void paintImage(QPainter *painter);
+
+	void paintGL(QPainter *painter);
+
+    //video surface
+    QList<QVideoFrame::PixelFormat> supportedPixelFormats(
+            QAbstractVideoBuffer::HandleType handleType = QAbstractVideoBuffer::GLTextureHandle) const;
+
+// 	virtual bool isFormatSupported(const QVideoSurfaceFormat& format) const;
+
+// 	virtual QVideoSurfaceFormat nearestFormat(const QVideoSurfaceFormat& format) const;
+
+    bool start(const QVideoSurfaceFormat &format);
+    void stop();
+    bool present(const QVideoFrame &frame);
+
+	void resize(QSizeF newsize);
+
+	template<typename T>
+	void setSize(const T&s){resize(s);}
+
+private Q_SLOTS:
+
+	void viewportDestroyed();
+
+private:
+
+	QMutex m_render_lock;
+
+    QImage::Format imageFormat;
+    QSize imageSize;
+
+    QVideoFrame currentFrame;
+	bool need_update_gltexture;
+    bool framePainted;
+
+	VideoPainter * m_painter;
+    bool updatePaintDevice;
+    QSizeF my_size;
+};
 

@@ -50,31 +50,6 @@
 #include <QDebug>
 #include <QGraphicsWidget>
 
-// 用来保持图形纹理数据
-class GLTextureVideoBuffer : QAbstractVideoBuffer
-{
-public:
-	GLTextureVideoBuffer()
-		: QAbstractVideoBuffer(QAbstractVideoBuffer::GLTextureHandle)
-	{}
-
-	virtual uchar* map(MapMode mode, int* numBytes, int* bytesPerLine)
-	{
-		return nullptr;
-	}
-
-	virtual void unmap(){}
-
-	QVariant handle() const {
-		return 0;
-	}
-
-private:
-
-
-};
-
-
 class VideoPainter : public QOpenGLFunctions
 {
 	virtual void initializeGL()
@@ -82,7 +57,38 @@ class VideoPainter : public QOpenGLFunctions
 		initializeOpenGLFunctions();
 	}
 
-	virtual void paintGL(){
+public:
+	virtual void paintGL(QSizeF viewport_size)
+	{
+		m_program.bind();
+
+		m_texture_Y->bind(0);
+		m_texture_U->bind(1);
+		m_texture_V->bind(2);
+
+		m_program.setUniformValue(m_program.uniformLocation("tex0"), 0);
+		m_program.setUniformValue(m_program.uniformLocation("tex1"), 1);
+		m_program.setUniformValue(m_program.uniformLocation("tex2"), 2);
+
+		glBegin(GL_POLYGON);
+		glTexCoord2d(0,0);
+		glVertex2d(0,0);
+
+		glTexCoord2d(1,0);
+		glVertex2d(viewport_size.width(), 0);
+
+		glTexCoord2d(1,1);
+		glVertex2d(viewport_size.width(), viewport_size.height());
+
+		glTexCoord2d(0,1);
+		glVertex2d(0, viewport_size.height());
+		glEnd();
+
+		m_texture_Y->release();
+		m_texture_U->release();
+		m_texture_V->release();
+		m_program.release();
+
 
 	}
 
@@ -91,16 +97,68 @@ public:
 	VideoPainter(VideoItem* parent)
 	{
 		initializeGL();
+
+		m_program.addShaderFromSourceFile(QOpenGLShader::Fragment, ":/glsl/yuv.frag");
+
+		m_program.link();
+
+		m_texture_Y.reset(new QOpenGLTexture(QOpenGLTexture::Target2D));
+		m_texture_U.reset(new QOpenGLTexture(QOpenGLTexture::Target2D));
+		m_texture_V.reset(new QOpenGLTexture(QOpenGLTexture::Target2D));
 	}
+
+	~VideoPainter()
+	{
+		m_texture_Y->destroy();
+		m_texture_U->destroy();
+		m_texture_V->destroy();
+	}
+
+	void update_texture(const QVideoFrame& newframe)
+	{
+		auto vsize = newframe.size();
+		// update texture fome newframe
+		if (m_texture_Y->isCreated())
+			m_texture_Y->destroy();
+
+		m_texture_Y->setSize(newframe.bytesPerLine(0), vsize.height(), 0);
+		m_texture_Y->setFormat(QOpenGLTexture::R8_UNorm);
+		m_texture_Y->setMinificationFilter(QOpenGLTexture::Nearest);
+		m_texture_Y->setMagnificationFilter(QOpenGLTexture::Nearest);
+		m_texture_Y->allocateStorage();
+  		m_texture_Y->setData(QOpenGLTexture::Red, QOpenGLTexture::UInt8, newframe.bits(0));
+
+		if(m_texture_U->isCreated())
+			m_texture_U->destroy();
+
+		m_texture_U->setSize(newframe.bytesPerLine(1), vsize.height()/2, 0);
+		m_texture_U->setFormat( QOpenGLTexture::R8_UNorm);
+		m_texture_U->setMinificationFilter(QOpenGLTexture::Nearest);
+		m_texture_U->setMagnificationFilter(QOpenGLTexture::Nearest);
+		m_texture_U->allocateStorage();
+		m_texture_U->setData(QOpenGLTexture::Red, QOpenGLTexture::UInt8, newframe.bits(1));
+
+		if(m_texture_V->isCreated())
+			m_texture_V->destroy();
+
+		m_texture_V->setSize(newframe.bytesPerLine(2), vsize.height()/2, 0);
+		m_texture_V->setFormat(QOpenGLTexture::R8_UNorm);
+		m_texture_V->setMinificationFilter(QOpenGLTexture::Nearest);
+		m_texture_V->setMagnificationFilter(QOpenGLTexture::Nearest);
+		m_texture_V->allocateStorage();
+		m_texture_V->setData(QOpenGLTexture::Red, QOpenGLTexture::UInt8, newframe.bits(2));
+	}
+
+	QScopedPointer<QOpenGLTexture> m_texture_Y;
+	QScopedPointer<QOpenGLTexture> m_texture_U;
+	QScopedPointer<QOpenGLTexture> m_texture_V;
+	QOpenGLShaderProgram m_program;
 };
 
 VideoItem::VideoItem(QGraphicsItem *parent)
     : QGraphicsItem(parent)
     , imageFormat(QImage::Format_Invalid)
     , framePainted(false)
-	, m_Y(QOpenGLTexture::Target2D)
-	, m_U(QOpenGLTexture::Target2D)
-	, m_V(QOpenGLTexture::Target2D)
 {
 	updatePaintDevice = true;
 }
@@ -146,98 +204,17 @@ void VideoItem::paintGL(QPainter* painter)
 	painter->beginNativePainting();
 	glEnable(GL_TEXTURE_2D);
 
-	m_program.bind();
-
 	auto vsize = currentFrame.size();
 
 	if ( need_update_gltexture && currentFrame.map(QAbstractVideoBuffer::ReadOnly))
 	{
-		static uint8_t all_zero [1920*1080*4] = { 0 };
-
-		int bytesPerLine = (vsize.width() + 3) & ~3;
-		int bytesPerLine2 = (vsize.width() / 2 + 3) & ~3;
-
-		if (m_Y.isCreated())
-			m_Y.destroy();
-
-		m_Y.setSize(bytesPerLine, vsize.height(), 0);
-		m_Y.setFormat(QOpenGLTexture::R8_UNorm);
-		m_Y.setMinificationFilter(QOpenGLTexture::Nearest);
-		m_Y.setMagnificationFilter(QOpenGLTexture::Nearest);
-		m_Y.allocateStorage();
-  		m_Y.setData(QOpenGLTexture::Red, QOpenGLTexture::UInt8, currentFrame.bits(0));
-// 		m_Y.setData(QOpenGLTexture::Red, QOpenGLTexture::UInt8, all_zero);
-
-		if(m_U.isCreated())
-			m_U.destroy();
-
-		m_U.setSize(currentFrame.bytesPerLine(1), vsize.height()/2, 0);
-		m_U.setFormat( QOpenGLTexture::R8_UNorm);
-		m_U.setMinificationFilter(QOpenGLTexture::Nearest);
-		m_U.setMagnificationFilter(QOpenGLTexture::Nearest);
-		m_U.allocateStorage();
-		m_U.setData(QOpenGLTexture::Red, QOpenGLTexture::UInt8, currentFrame.bits(1));
-// 		m_U.setData(QOpenGLTexture::Red, QOpenGLTexture::UInt8, all_zero);
-
-		auto bits = currentFrame.bits(1);
-
-// 		qDebug() << QByteArray::fromRawData((const char*)bits, currentFrame.bytesPerLine(1)).toBase64();
-
-		if(m_V.isCreated())
-			m_V.destroy();
-
-		m_V.setSize(currentFrame.bytesPerLine(2), vsize.height()/2, 0);
-		m_V.setFormat(QOpenGLTexture::R8_UNorm);
-		m_V.setMinificationFilter(QOpenGLTexture::Nearest);
-		m_V.setMagnificationFilter(QOpenGLTexture::Nearest);
-		m_V.allocateStorage();
-		m_V.setData(QOpenGLTexture::Red, QOpenGLTexture::UInt8, currentFrame.bits(2));
-// 		m_V.setData(QOpenGLTexture::Red, QOpenGLTexture::UInt8, all_zero);
-
-		bits = currentFrame.bits(2);
-
-// 		qDebug() << QByteArray::fromRawData((const char*)bits, currentFrame.bytesPerLine(2)).toBase64();
+		m_painter->update_texture(currentFrame);
+		currentFrame.unmap();
 
 		need_update_gltexture = false;
-
-		currentFrame.unmap();
 	}
 
-	m_Y.bind(0, QOpenGLTexture::ResetTextureUnit);
-	m_U.bind(1, QOpenGLTexture::ResetTextureUnit);
-	m_V.bind(2, QOpenGLTexture::ResetTextureUnit);
-
-	m_program.setUniformValue(m_program.uniformLocation("tex0"), 0);
-	m_program.setUniformValue(m_program.uniformLocation("tex1"), 1);
-	m_program.setUniformValue(m_program.uniformLocation("tex2"), 2);
-
-// 	qDebug() << "U is bound ? : " << m_U.isBound(1);
-// 	qDebug() << "V is bound ? : " << m_V.isBound(2);
-
-	qDebug() << "Y is bound to : "	<< m_Y.boundTextureId(QOpenGLTexture::BindingTarget2D);
-	qDebug() << "U is bound to : "	<< m_U.boundTextureId(QOpenGLTexture::BindingTarget2D);
-	qDebug() << "V is bound to : " <<	m_V.boundTextureId(QOpenGLTexture::BindingTarget2D);
-
-// 	m_program.uniformLocation();
-
-	glBegin(GL_POLYGON);
-	glTexCoord2d(0,0);
-	glVertex2d(0,0);
-
-	glTexCoord2d(1,0);
-	glVertex2d(my_size.width(), 0);
-
-	glTexCoord2d(1,1);
-	glVertex2d(my_size.width(), my_size.height());
-
-	glTexCoord2d(0,1);
-	glVertex2d(0, my_size.height());
-	glEnd();
-
-	m_Y.release();
-	m_U.release();
-	m_V.release();
-	m_program.release();
+	m_painter->paintGL(my_size);
 	painter->endNativePainting();
 
 }
@@ -308,10 +285,6 @@ bool VideoItem::start(const QVideoSurfaceFormat &format)
 
 		qDebug() << format.pixelFormat();
 
-		m_program.addShaderFromSourceFile(QOpenGLShader::Fragment, ":/glsl/yuv.frag");
-
-		m_program.link();
-
 		QAbstractVideoSurface::start(format);
 
 		prepareGeometryChange();
@@ -351,3 +324,4 @@ bool VideoItem::present(const QVideoFrame &frame)
         return true;
     }
 }
+

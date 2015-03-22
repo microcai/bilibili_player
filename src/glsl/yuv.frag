@@ -16,28 +16,9 @@ void main()
     vec3 rgb, yuv;
 	vec2 tcoord = vec2(gl_TexCoord[0].st);
 
-    // Get the Y value
-//     yuv.x = texture2D(tex0, tcoord).r;
-
-    float Y, U, V;
-    float R,G,B;
-
-    Y = clamp( texture2D(tex0, tcoord).r * 255.0 , 0.0, 255.0);
-
-    U = clamp( texture2D(tex1, tcoord).r * 255.0 , 0.0, 255.0);
-
-    V = clamp( texture2D(tex2, tcoord).r * 255.0 , 0.0, 255.0);
-
-    R = Y + 1.402*(V-128.0);
-
-    G = Y - 0.344*(U-128.0) - 0.714 * (V-128.0);
-
-    G = Y + 1.772*(U-128.0);
-
     yuv.x = texture2D(tex0, tcoord).r;
 
     // Get the U and V values
-//     tcoord *= 0.5;
     yuv.y = texture2D(tex1, tcoord).r;
     yuv.z = texture2D(tex2, tcoord).r;
 

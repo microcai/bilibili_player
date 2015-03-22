@@ -11,8 +11,8 @@ add_executable(bilibili_player
 	danmumanager.cpp
 	danmumanager.hpp
 	screensaverinhibitor.cpp
-	customvideoitem/videoitem.hpp
-	customvideoitem/videoitem.cpp
+	videoitem.hpp
+	videoitem.cpp
 	)
 
 set_target_properties(bilibili_player PROPERTIES AUTOMOC ON)
