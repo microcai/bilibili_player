@@ -33,6 +33,7 @@ class BPlayer : public QObject
 	Q_OBJECT
 	Q_PROPERTY(bool UseBullet MEMBER  use_bullet)
 	Q_PROPERTY(bool UseOpenGL MEMBER  use_gl)
+	Q_PROPERTY(QString VideoAspect MEMBER  VideoAspect)
     Q_PROPERTY(double ZoomLevel READ ZoomLevel WRITE SetZoomLevel NOTIFY ZoomLevelChanged)
     Q_PROPERTY(double full_screen READ full_screen_mode WRITE set_full_screen_mode NOTIFY full_screen_mode_changed)
 
@@ -138,4 +139,5 @@ private:
 	DanmuManager m_danmumgr;
 	bool use_bullet = false;
 	bool use_gl = true;
+	QString VideoAspect = "auto";
 };

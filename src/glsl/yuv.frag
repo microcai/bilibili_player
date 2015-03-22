@@ -46,5 +46,5 @@ void main()
 	rgb.b = dot(yuv, Bcoeff);
 
 	// That was easy. :)
-	gl_FragColor = vec4(rgb, gl_Color.a) * gl_Color;
+	gl_FragColor = vec4(rgb, gl_Color.a);
 }

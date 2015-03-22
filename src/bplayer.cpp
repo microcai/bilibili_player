@@ -148,7 +148,6 @@ void BPlayer::start_play()
 
 	graphicsView->setBackgroundRole(QPalette::WindowText);
 
-
 	QPalette palette = m_mainwindow->palette();
 	palette.setColor(QPalette::Background, QColor::fromRgb(0,0,0));
 
@@ -484,11 +483,6 @@ void BPlayer::durationChanged(qint64 duration)
 
 void BPlayer::adjust_window_size()
 {
-	auto origin_gemetry = m_mainwindow->geometry();
-	m_mainwindow->setGeometry(origin_gemetry.x(), origin_gemetry.y(),1,1);
-
-	qApp->processEvents();
-
 	auto widget_size = video_size;
 	if (!qIsNaN(zoom_level))
 		widget_size = video_size * zoom_level;
@@ -587,7 +581,24 @@ void BPlayer::slot_metaDataChanged(QString key, QVariant v)
 {
 	if (key == "Resolution")
 	{
-		video_size = v.toSize();
+		// 计算比例。
+
+		if(VideoAspect=="auto")
+		{
+			video_size = v.toSize();
+		}
+		else
+		{
+			int w=0,h=0;
+			std::sscanf(VideoAspect.toStdString().c_str(),  "%d:%d", &w,&h);
+
+			QSizeF templatesize(w,h);
+
+			templatesize.scale(v.toSizeF(), Qt::KeepAspectRatioByExpanding);
+
+			video_size = templatesize;
+
+		}
 
 		if (qIsNaN(zoom_level))
 		{
