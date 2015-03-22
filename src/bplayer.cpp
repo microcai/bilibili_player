@@ -1,5 +1,7 @@
 #include <iostream>
 
+#include <malloc.h>
+
 #include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
 #include <ctime>
@@ -703,6 +705,9 @@ void BPlayer::toogle_play_pause()
 			pause_indicator->show();
 
 			ani_group->start();
+
+			malloc_trim(0);
+
 			break;
 		}
 		case QMediaPlayer::PausedState:
