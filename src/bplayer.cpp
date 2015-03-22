@@ -290,12 +290,9 @@ void BPlayer::add_barrage(const Moving_Comment& c)
 
 	danmu->setGraphicsEffect(effect);
 
-// 	danmu->adjustSize();
-
 	auto preferedY = lastY += danmu->boundingRect().height() + 2;
 
 	auto textWidth = danmu->boundingRect().width();
-
 
 	if ( lastY > vsize.height()*0.66)
 		lastY = 0;
@@ -318,6 +315,7 @@ void BPlayer::add_barrage(const Moving_Comment& c)
 			auto items = graphicsView->items(rect, Qt::IntersectsItemShape);
 
 			items.removeAll(videoItem);
+			items.removeAll(video_surface);
 
 			if (items.empty())
 			{
@@ -821,15 +819,20 @@ void BPlayer::slot_mediaStatusChanged(QMediaPlayer::MediaStatus status)
 	{
 		case QMediaPlayer::BufferedMedia:;
 // 			position_slide->setEnabled(true);
+// 			break;
 		case QMediaPlayer::StalledMedia:
 		{
 			// 试试看切换到备用 url
-
+			auto cindex = play_list->currentIndex();
 			VideoURL& url = urls[play_list->currentIndex()];
 
+			qDebug() << "media stalled";
+
+			return;
+
+			// TODO 看来能正常下载也是会发出几次 stalled 回调的
 			if (url.backup_urls.size() >= 1)
 			{
-				auto cindex = play_list->currentIndex();
 				play_list->insertMedia(play_list->nextIndex(), QUrl(QString::fromStdString(url.backup_urls[0])));
 				play_list->removeMedia(cindex);
 
@@ -837,6 +840,11 @@ void BPlayer::slot_mediaStatusChanged(QMediaPlayer::MediaStatus status)
 				url.backup_urls.erase(url.backup_urls.begin());
 
 				play_list->setCurrentIndex(cindex);
+			}else{
+				// TODO retry
+
+// 				qFatal("no urls left, all urls dead, quit");
+ 				//play_list->setCurrentIndex(cindex);
 			}
 		}
 	}
