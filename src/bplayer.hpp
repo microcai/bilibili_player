@@ -137,5 +137,5 @@ private:
 
 	DanmuManager m_danmumgr;
 	bool use_bullet = false;
-	bool use_gl = false;
+	bool use_gl = true;
 };
