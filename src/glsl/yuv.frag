@@ -29,11 +29,5 @@ void main()
     rgb.b = dot(yuv, Bcoeff);
 
     // That was easy. :)
-    gl_FragColor = vec4(rgb, 1.0);
-   return;
-    rgb.r = clamp( R /255.0 , 0.0, 1.0);
-    rgb.g = clamp( G /255.0 , 0.0, 1.0);
-    rgb.b = clamp( B /255.0 , 0.0, 1.0);
-    // That was easy. :)
-    gl_FragColor = vec4(rgb, 1.0);
+    gl_FragColor = vec4(rgb, 1.0) * gl_Color;
 }

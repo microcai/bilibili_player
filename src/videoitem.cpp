@@ -160,6 +160,7 @@ VideoItem::VideoItem(QGraphicsItem *parent)
     , imageFormat(QImage::Format_Invalid)
     , framePainted(false)
 {
+	m_painter = nullptr;
 	updatePaintDevice = true;
 }
 
