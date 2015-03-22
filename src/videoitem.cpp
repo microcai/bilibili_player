@@ -61,6 +61,7 @@ class VideoPainter : public QOpenGLFunctions
 public:
 	virtual void paintGL(QSizeF viewport_size, const QVideoFrame& framePaintee)
 	{
+		auto video_size = framePaintee.size();
 		glEnable(GL_TEXTURE_2D);
 		m_program.bind();
 
@@ -72,28 +73,29 @@ public:
 		m_program.setUniformValue(m_program.uniformLocation("tex1"), 1);
 		m_program.setUniformValue(m_program.uniformLocation("tex2"), 2);
 
-        const float txLeft = 0.0;
-        const float txRight = 1.0;
+		const float txLeft = 1.0 / video_size.width() * 2;
+		const float txRight = (video_size.width() * 2.0 - 1.0) / (video_size.width() * 2.0);
 
-        const float txTop = 0.0;
-        const float txBottom = 1.0;
+		const float txTop = 1.0 / (video_size.height() * 2.0);
+		const float txBottom = (video_size.height() * 2.0 - 1.0) / (video_size.height() * 2.0);
 
-        const GLdouble tx_array[] =
-        {
-            0.0, 0.0,
-            1.0, 0.0,
-            1.0, 1.0,
-            0.0, 1.0
-        };
 
-        const GLdouble v_array[] =
-        {
-            0.0     , 0.0,
-			viewport_size.width() + 1.0   , 0.0,
-            viewport_size.width() + 1.0, viewport_size.height() + 1.0,
+		const GLdouble tx_array[] =
+		{
+			txLeft, txTop,
+			txRight, txTop,
+			txRight, txBottom,
+			txLeft, txBottom
+		};
 
-            0.0, viewport_size.height() + 1.0,
-        };
+		const GLdouble v_array[] =
+		{
+			0.0     , 0.0,
+			viewport_size.width(), 0.0,
+			viewport_size.width(), viewport_size.height(),
+
+			0.0, viewport_size.height(),
+		};
 
 		// using this can avoid linking to OpenGL libraries
 		QOpenGLFunctions_2_0 glfunc;
@@ -151,7 +153,7 @@ public:
 		m_texture_Y->setMinificationFilter(QOpenGLTexture::Nearest);
 		m_texture_Y->setMagnificationFilter(QOpenGLTexture::Nearest);
 		m_texture_Y->allocateStorage();
-  		m_texture_Y->setData(QOpenGLTexture::Red, QOpenGLTexture::UInt8, newframe.bits(0));
+		m_texture_Y->setData(QOpenGLTexture::Red, QOpenGLTexture::UInt8, newframe.bits(0));
 
 		if(m_texture_U->isCreated())
 			m_texture_U->destroy();
@@ -181,9 +183,9 @@ public:
 };
 
 VideoItem::VideoItem(QGraphicsItem *parent)
-    : QGraphicsItem(parent)
-    , imageFormat(QImage::Format_Invalid)
-    , framePainted(false)
+	: QGraphicsItem(parent)
+	, imageFormat(QImage::Format_Invalid)
+	, framePainted(false)
 {
 	m_painter = nullptr;
 	updatePaintDevice = true;
@@ -246,8 +248,8 @@ void VideoItem::paintGL(QPainter* painter)
 
 void VideoItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
 {
-    Q_UNUSED(option);
-    Q_UNUSED(widget);
+	Q_UNUSED(option);
+	Q_UNUSED(widget);
 
 	QMutexLocker l(&m_render_lock);
 	if(!currentFrame.isValid())
@@ -266,12 +268,14 @@ void VideoItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option,
 
 	if (currentFrame.pixelFormat() != QVideoFrame::Format_YUV420P)
 	{
-		if (surfaceFormat().scanLineDirection() == QVideoSurfaceFormat::BottomToTop) {
+		if (surfaceFormat().scanLineDirection() == QVideoSurfaceFormat::BottomToTop)
+		{
 			painter->scale(1, -1);
 			painter->translate(0, -boundingRect().height());
 		}
 
-		if (currentFrame.map(QAbstractVideoBuffer::ReadOnly)) {
+		if (currentFrame.map(QAbstractVideoBuffer::ReadOnly))
+		{
 			paintImage(painter);
 			currentFrame.unmap();
 		}
@@ -288,7 +292,8 @@ void VideoItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option,
 QList<QVideoFrame::PixelFormat> VideoItem::supportedPixelFormats(
         QAbstractVideoBuffer::HandleType handleType) const
 {
-	if (handleType == QAbstractVideoBuffer::NoHandle) {
+	if (handleType == QAbstractVideoBuffer::NoHandle)
+	{
 		return QList<QVideoFrame::PixelFormat>()
 				<< QVideoFrame::Format_RGB32
 				<< QVideoFrame::Format_ARGB32
@@ -297,14 +302,17 @@ QList<QVideoFrame::PixelFormat> VideoItem::supportedPixelFormats(
 				<< QVideoFrame::Format_RGB555
 				<< QVideoFrame::Format_YUV420P
 				<< QVideoFrame::Format_NV12;
-	} else {
+	}
+	else
+	{
 		return QList<QVideoFrame::PixelFormat>();
 	}
 }
 
 bool VideoItem::start(const QVideoSurfaceFormat &format)
 {
-	if (isFormatSupported(format)) {
+	if (isFormatSupported(format))
+	{
 		imageFormat = QVideoFrame::imageFormatFromPixelFormat(format.pixelFormat());
 		imageSize = format.frameSize();
 		framePainted = true;
@@ -323,10 +331,10 @@ bool VideoItem::start(const QVideoSurfaceFormat &format)
 
 void VideoItem::stop()
 {
-    currentFrame = QVideoFrame();
-    framePainted = false;
+	currentFrame = QVideoFrame();
+	framePainted = false;
 
-    QAbstractVideoSurface::stop();
+	QAbstractVideoSurface::stop();
 }
 
 bool VideoItem::present(const QVideoFrame &frame)
@@ -339,15 +347,15 @@ bool VideoItem::present(const QVideoFrame &frame)
 	need_update_gltexture = true;
 
 	if (!framePainted) {
-        if (!QAbstractVideoSurface::isActive())
+		if (!QAbstractVideoSurface::isActive())
 			setError(QAbstractVideoSurface::StoppedError);
-        return false;
-    } else {
-        framePainted = false;
+		return false;
+	} else {
+		framePainted = false;
 
-        update();
+		update();
 
-        return true;
-    }
+		return true;
+	}
 }
 
