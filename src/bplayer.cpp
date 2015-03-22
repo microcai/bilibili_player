@@ -290,7 +290,7 @@ void BPlayer::add_barrage(const Moving_Comment& c)
 
 	danmu->setGraphicsEffect(effect);
 
-	auto preferedY = lastY += danmu->boundingRect().height() + 2;
+	auto preferedY = lastY += danmu->boundingRect().height() + graphicsView->logicalDpiY() / 72.0 * 3 ;
 
 	auto textWidth = danmu->boundingRect().width();
 
@@ -311,7 +311,7 @@ void BPlayer::add_barrage(const Moving_Comment& c)
 		// 应该开始寻找替代位置
 		for (int guessY = 6; guessY < vsize.height() * 0.7 ; guessY++)
 		{
-			QRect rect(vsize.width() - textWidth * 0.7, guessY, textWidth, danmu->boundingRect().height() +2);
+			QRect rect(vsize.width() - textWidth * 0.7, guessY, textWidth, danmu->boundingRect().height() + graphicsView->logicalDpiY() / 72.0 * 2);
 			auto items = graphicsView->items(rect, Qt::IntersectsItemShape);
 
 			items.removeAll(videoItem);
@@ -501,14 +501,13 @@ void BPlayer::adjust_window_size()
 
 	auto adjusted_size = graphicsView->minimumSizeHint();
 
-	m_mainwindow->adjustSize();
 
 	scene->setSceneRect(QRectF(QPointF(), player_visiable_area_size));
 
 	m_danmumgr.video_width = video_size.width();
 
-	graphicsView->resetMatrix();
-	graphicsView->resetTransform();
+	if (!m_mainwindow->isFullScreen())
+		m_mainwindow->adjustSize();
 }
 
 void BPlayer::zoom_in()
@@ -557,8 +556,6 @@ void BPlayer::slot_full_screen_mode_changed(bool)
 		graphicsView->setCursor(Qt::BlankCursor);
 		if (videoItem)
 			videoItem->setCursor(Qt::BlankCursor);
-
-
 	}
 	else
 	{
@@ -572,6 +569,8 @@ void BPlayer::slot_full_screen_mode_changed(bool)
 		}
 		m_mainwindow->setCursor(Qt::ArrowCursor);
 		graphicsView->setCursor(Qt::ArrowCursor);
+
+		adjust_window_size();
 	}
 }
 
@@ -815,18 +814,25 @@ void BPlayer::play_state_changed(QMediaPlayer::State state)
 
 void BPlayer::slot_mediaStatusChanged(QMediaPlayer::MediaStatus status)
 {
+
+	qDebug() << "media state :" << status;
+
 	switch(status)
 	{
-		case QMediaPlayer::BufferedMedia:;
+		case QMediaPlayer::BufferedMedia:
+// 			qDebug() << "media is buffering";;
 // 			position_slide->setEnabled(true);
-// 			break;
+
+			// 在这里取消缓冲滚动圈圈
+
+ 			break;
 		case QMediaPlayer::StalledMedia:
 		{
 			// 试试看切换到备用 url
 			auto cindex = play_list->currentIndex();
 			VideoURL& url = urls[play_list->currentIndex()];
 
-			qDebug() << "media stalled";
+// 			qDebug() << "media stalled";
 
 			return;
 
