@@ -9,6 +9,7 @@ uniform mat4 gl_ModelViewProjectionMatrix;*/
 uniform vec2 texture_size;
 uniform vec2 video_window_size;
 
+
 // 假冒的 tex 地址，其实只是插值产生纹理数值的整数坐标
 // varying vec2 fake_tex_cord;
 
@@ -29,4 +30,5 @@ void main()
 	tcoord.y /= (texture_size.y * 2.0) ;
 
 	gl_TexCoord[0] = vec4(tcoord, 0.0, 0.0);
+
 }

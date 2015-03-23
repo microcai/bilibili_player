@@ -21,6 +21,8 @@ uniform float brightness;
 uniform float contrast;
 uniform float saturation;
 
+varying vec2 v_texCoord;
+varying vec2 v_blurTexCoords[14];
 
 // 假冒的 tex 地址，其实只是插值产生纹理数值的整数坐标
 // varying vec2 fake_tex_cord;
@@ -64,20 +66,20 @@ vec3 get_yuv_from_texture(in vec2 tcoord)
 	return yuv;
 }
 
-void main()
+vec4 mytexture2D(in vec2 tcoord)
 {
 	vec3 rgb, yuv;
 // 	float tex_cord_x = 2I + 1 / 2N
-
-
-	vec2 tcoord = gl_TexCoord[0].st;
-
 
 	yuv = get_yuv_from_texture(tcoord);
 
 	// Do the color transform
 	rgb = yuv2rgb(color_tweak(yuv));
+	return vec4(rgb, 1.0);
+}
 
+void main()
+{
 	// That was easy. :)
-	gl_FragColor = vec4(rgb, gl_Color.a);
+	gl_FragColor = mytexture2D(gl_TexCoord[0].st);
 }
