@@ -23,7 +23,7 @@ uniform float saturation;
 
 
 // 假冒的 tex 地址，其实只是插值产生纹理数值的整数坐标
-varying vec2 fake_tex_cord;
+// varying vec2 fake_tex_cord;
 
 vec3 yuv2rgb(vec3 yuv)
 {
@@ -70,12 +70,8 @@ void main()
 // 	float tex_cord_x = 2I + 1 / 2N
 
 
-	vec2 tcoord;
+	vec2 tcoord = gl_TexCoord[0].st;
 
-	tcoord = (fake_tex_cord * 2.0 );//+ vec2(1.0, 1.0) );
-
-	tcoord.x /= (texture_size.x * 2.0) ;
-	tcoord.y /= (texture_size.y * 2.0) ;
 
 	yuv = get_yuv_from_texture(tcoord);
 
