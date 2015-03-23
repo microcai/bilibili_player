@@ -70,9 +70,14 @@ public:
 		float contrast = 1.0;
 		float saturation = 1.0;
 
+		QOpenGLShaderProgram * current_program;
+
+		std::shared_ptr<int> auto_cleanup;
+
 		switch(render_type)
 		{
 			case render_direct_texture:
+				current_program = & m_program_only_vertex_shader;
 				m_program_only_vertex_shader.bind();
 
 				// 把 shader 里的 tex0 tex1 tex2变量 和 0号 1号 2号 三个纹理缓存绑定.
@@ -81,29 +86,36 @@ public:
 				glActiveTexture(GL_TEXTURE0);
 				glBindTexture(GL_TEXTURE_2D,  GLuint(*_direct_texture_id));
 
-				m_program_only_vertex_shader.setUniformValue(m_program_only_vertex_shader.uniformLocation("video_window_size"), QVector2D(viewport_size.width(), viewport_size.height()));
-				m_program_only_vertex_shader.setUniformValue(m_program_only_vertex_shader.uniformLocation("texture_size"), QVector2D(video_size.width(), video_size.height()));
 			break;
 			case render_YUV_texture:
+				current_program = &m_program_has_yuv_shader;
 				m_program_has_yuv_shader.bind();
 				// 把 设定传递给 shader 里的对应变量.
-				m_program_has_yuv_shader.setUniformValue(m_program_has_yuv_shader.uniformLocation("brightness"), brightness);
-				m_program_has_yuv_shader.setUniformValue(m_program_has_yuv_shader.uniformLocation("contrast"), contrast);
-				m_program_has_yuv_shader.setUniformValue(m_program_has_yuv_shader.uniformLocation("saturation"), saturation);
+				m_program_has_yuv_shader.setUniformValue("brightness", brightness);
+				m_program_has_yuv_shader.setUniformValue("contrast", contrast);
+				m_program_has_yuv_shader.setUniformValue("saturation", saturation);
 
 				// 把 shader 里的 tex0 tex1 tex2变量 和 0号 1号 2号 三个纹理缓存绑定.
-				m_program_has_yuv_shader.setUniformValue(m_program_has_yuv_shader.uniformLocation("tex0"), 0);
-				m_program_has_yuv_shader.setUniformValue(m_program_has_yuv_shader.uniformLocation("tex1"), 1);
-				m_program_has_yuv_shader.setUniformValue(m_program_has_yuv_shader.uniformLocation("tex2"), 2);
+				m_program_has_yuv_shader.setUniformValue("tex0", 0u);
+				m_program_has_yuv_shader.setUniformValue("tex1", 1u);
+				m_program_has_yuv_shader.setUniformValue("tex2", 2u);
 
-				m_program_has_yuv_shader.setUniformValue(m_program_has_yuv_shader.uniformLocation("video_window_size"), QVector2D(viewport_size.width(), viewport_size.height()));
-				m_program_has_yuv_shader.setUniformValue(m_program_has_yuv_shader.uniformLocation("texture_size"), QVector2D(video_size.width(), video_size.height()));
+				m_texture_Y->bind(0);
+				m_texture_U->bind(1);
+				m_texture_V->bind(2);
 
+				auto_cleanup.reset((int*)nullptr, [this](int*)
+				{
+					m_texture_Y->release();
+					m_texture_U->release();
+					m_texture_V->release();
+
+				});
 		}
 
-		m_texture_Y->bind(0);
-		m_texture_U->bind(1);
-		m_texture_V->bind(2);
+		current_program->setUniformValue(current_program->uniformLocation("video_window_size"), QVector2D(viewport_size.width(), viewport_size.height()));
+		current_program->setUniformValue(current_program->uniformLocation("texture_size"), QVector2D(video_size.width(), video_size.height()));
+
 
 		const GLdouble v_array[] =
 		{
@@ -114,20 +126,11 @@ public:
 			0.0, viewport_size.height(),
 		};
 
-		// using this can avoid linking to OpenGL libraries
-		QOpenGLFunctions_2_0 glfunc;
-
-		glfunc.initializeOpenGLFunctions();
-		glfunc.glVertexPointer(2, GL_DOUBLE, 0, v_array);
-
-		glfunc.glEnableClientState(GL_VERTEX_ARRAY);
+		current_program->enableAttributeArray(0);
+		glVertexAttribPointer(0, 2, GL_DOUBLE, GL_FALSE, 0, v_array);
 		glDrawArrays(GL_POLYGON, 0, 4);
-		glfunc.glDisableClientState(GL_VERTEX_ARRAY);
 
-		m_texture_Y->release();
-		m_texture_U->release();
-		m_texture_V->release();
-		glUseProgram(0);
+		current_program->release();
 	}
 
 public:
