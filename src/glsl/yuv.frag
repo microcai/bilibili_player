@@ -25,7 +25,7 @@ uniform float saturation;
 // 假冒的 tex 地址，其实只是插值产生纹理数值的整数坐标
 // varying vec2 fake_tex_cord;
 
-vec3 yuv2rgb(vec3 yuv)
+vec3 yuv2rgb(in vec3 yuv)
 {
 	vec3 rgb;
 
@@ -39,7 +39,7 @@ vec3 yuv2rgb(vec3 yuv)
 	return rgb;
 }
 
-vec3 color_tweak(vec3 yuv)
+vec3 color_tweak(in vec3 yuv)
 {
 	float newY, newU, newV;
 
@@ -50,7 +50,7 @@ vec3 color_tweak(vec3 yuv)
 	return vec3(newY, newU, newV);
 }
 
-vec3 get_yuv_from_texture(vec2 tcoord)
+vec3 get_yuv_from_texture(in vec2 tcoord)
 {
 	vec3 yuv;
 
