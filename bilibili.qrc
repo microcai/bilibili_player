@@ -8,5 +8,6 @@
     </qresource>
     <qresource prefix="/glsl">
         <file alias="yuv.frag">src/glsl/yuv.frag</file>
+        <file alias="videowindow.vert">src/glsl/videowindow.vert</file>
     </qresource>
 </RCC>

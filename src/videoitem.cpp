@@ -83,20 +83,8 @@ public:
 		m_program.setUniformValue(m_program.uniformLocation("tex1"), 1);
 		m_program.setUniformValue(m_program.uniformLocation("tex2"), 2);
 
-		const float txLeft = 1.0 / video_size.width() * 2;
-		const float txRight = (video_size.width() * 2.0 - 1.0) / (video_size.width() * 2.0);
-
-		const float txTop = 1.0 / (video_size.height() * 2.0);
-		const float txBottom = (video_size.height() * 2.0 - 1.0) / (video_size.height() * 2.0);
-
-
-		const GLdouble tx_array[] =
-		{
-			txLeft, txTop,
-			txRight, txTop,
-			txRight, txBottom,
-			txLeft, txBottom
-		};
+		m_program.setUniformValue(m_program.uniformLocation("video_window_size"), QVector2D(viewport_size.width(), viewport_size.height()));
+		m_program.setUniformValue(m_program.uniformLocation("texture_size"), QVector2D(video_size.width(), video_size.height()));
 
 		const GLdouble v_array[] =
 		{
@@ -112,15 +100,10 @@ public:
 
 		glfunc.initializeOpenGLFunctions();
 		glfunc.glVertexPointer(2, GL_DOUBLE, 0, v_array);
-		glfunc.glTexCoordPointer(2, GL_DOUBLE, 0, tx_array);
 
 		glfunc.glEnableClientState(GL_VERTEX_ARRAY);
-		glfunc.glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-
 		glDrawArrays(GL_POLYGON, 0, 4);
-
 		glfunc.glDisableClientState(GL_VERTEX_ARRAY);
-		glfunc.glDisableClientState(GL_TEXTURE_COORD_ARRAY);
 
 		m_texture_Y->release();
 		m_texture_U->release();
@@ -135,6 +118,7 @@ public:
 	{
 		initializeGL();
 
+		m_program.addShaderFromSourceFile(QOpenGLShader::Vertex, ":/glsl/videowindow.vert");
 		m_program.addShaderFromSourceFile(QOpenGLShader::Fragment, ":/glsl/yuv.frag");
 
 		m_program.link();
@@ -160,8 +144,8 @@ public:
 
 		m_texture_Y->setSize(newframe.bytesPerLine(0), vsize.height(), 0);
 		m_texture_Y->setFormat(QOpenGLTexture::R8_UNorm);
-		m_texture_Y->setMinificationFilter(QOpenGLTexture::Nearest);
-		m_texture_Y->setMagnificationFilter(QOpenGLTexture::Nearest);
+		m_texture_Y->setMinificationFilter(QOpenGLTexture::LinearMipMapLinear);
+		m_texture_Y->setMagnificationFilter(QOpenGLTexture::LinearMipMapLinear);
 		m_texture_Y->allocateStorage();
 		m_texture_Y->setData(QOpenGLTexture::Red, QOpenGLTexture::UInt8, newframe.bits(0));
 
@@ -170,8 +154,8 @@ public:
 
 		m_texture_U->setSize(newframe.bytesPerLine(1), vsize.height()/2, 0);
 		m_texture_U->setFormat( QOpenGLTexture::R8_UNorm);
-		m_texture_U->setMinificationFilter(QOpenGLTexture::Nearest);
-		m_texture_U->setMagnificationFilter(QOpenGLTexture::Nearest);
+		m_texture_U->setMinificationFilter(QOpenGLTexture::LinearMipMapLinear);
+		m_texture_U->setMagnificationFilter(QOpenGLTexture::LinearMipMapLinear);
 		m_texture_U->allocateStorage();
 		m_texture_U->setData(QOpenGLTexture::Red, QOpenGLTexture::UInt8, newframe.bits(1));
 
@@ -180,8 +164,8 @@ public:
 
 		m_texture_V->setSize(newframe.bytesPerLine(2), vsize.height()/2, 0);
 		m_texture_V->setFormat(QOpenGLTexture::R8_UNorm);
-		m_texture_V->setMinificationFilter(QOpenGLTexture::Nearest);
-		m_texture_V->setMagnificationFilter(QOpenGLTexture::Nearest);
+		m_texture_V->setMinificationFilter(QOpenGLTexture::LinearMipMapLinear);
+		m_texture_V->setMagnificationFilter(QOpenGLTexture::LinearMipMapLinear);
 		m_texture_V->allocateStorage();
 		m_texture_V->setData(QOpenGLTexture::Red, QOpenGLTexture::UInt8, newframe.bits(2));
 	}
