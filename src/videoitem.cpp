@@ -48,7 +48,7 @@
 #include <QVideoSurfaceFormat>
 #include <QOpenGLFunctions>
 #include <QOpenGLPixelTransferOptions>
-#include <QOpenGLFunctions_2_0>
+#include <QOpenGLBuffer>
 
 #include <QDebug>
 #include <QGraphicsWidget>
@@ -59,9 +59,31 @@ class VideoPainter : public QOpenGLFunctions
 	{
 		initializeOpenGLFunctions();
 	}
+	QSizeF viewport_size;
 
 public:
-	virtual void paintGL(QSizeF viewport_size, const QVideoFrame& framePaintee)
+
+	void set_viewport_size(QSizeF _viewport_size)
+	{
+		viewport_size = _viewport_size;
+		const GLdouble v_array[] =
+		{
+			0.0     , 0.0,
+			viewport_size.width(), 0.0,
+			viewport_size.width(), viewport_size.height(),
+
+			0.0, viewport_size.height(),
+		};
+
+		if(!m_drawing_vexteres.isCreated())
+			m_drawing_vexteres.create();
+
+		m_drawing_vexteres.bind();
+
+		m_drawing_vexteres.allocate(v_array,  sizeof(v_array));
+	}
+
+	virtual void paintGL(const QVideoFrame& framePaintee)
 	{
 		auto video_size = framePaintee.size();
 		glEnable(GL_TEXTURE_2D);
@@ -116,28 +138,26 @@ public:
 		current_program->setUniformValue(current_program->uniformLocation("video_window_size"), QVector2D(viewport_size.width(), viewport_size.height()));
 		current_program->setUniformValue(current_program->uniformLocation("texture_size"), QVector2D(video_size.width(), video_size.height()));
 
-
-		const GLdouble v_array[] =
-		{
-			0.0     , 0.0,
-			viewport_size.width(), 0.0,
-			viewport_size.width(), viewport_size.height(),
-
-			0.0, viewport_size.height(),
-		};
+		m_drawing_vexteres.bind();
 
 		current_program->enableAttributeArray(0);
-		glVertexAttribPointer(0, 2, GL_DOUBLE, GL_FALSE, 0, v_array);
+		glVertexAttribPointer(0, 2, GL_DOUBLE, GL_FALSE, 0, 0);
+
 		glDrawArrays(GL_POLYGON, 0, 4);
 
+		m_drawing_vexteres.release();
+		auto_cleanup.reset();
 		current_program->release();
 	}
 
 public:
 
 	VideoPainter(VideoItem* parent)
+		: m_drawing_vexteres(QOpenGLBuffer::VertexBuffer)
 	{
 		initializeGL();
+
+		m_drawing_vexteres.setUsagePattern(QOpenGLBuffer::DynamicDraw);
 
 		m_program_has_yuv_shader.addShaderFromSourceFile(QOpenGLShader::Vertex, ":/glsl/videowindow.vert");
 		m_program_has_yuv_shader.addShaderFromSourceFile(QOpenGLShader::Fragment, ":/glsl/yuv.frag");
@@ -157,6 +177,9 @@ public:
 			m_texture_U->destroy();
 		if (m_texture_V)
 			m_texture_V->destroy();
+
+		m_program_has_yuv_shader.removeAllShaders();
+		m_program_only_vertex_shader.removeAllShaders();
 	}
 
 
@@ -208,6 +231,10 @@ public:
 		{
 			render_type = render_YUV_texture;
 			update_yuv420p_texture(newframe);
+
+			if(!m_drawing_vexteres.isCreated())
+				m_drawing_vexteres.create();
+
 		}
 		else if (newframe.handleType() == QAbstractVideoBuffer::GLTextureHandle)
 		{
@@ -235,6 +262,8 @@ public:
 
 	QOpenGLShaderProgram m_program_only_vertex_shader;
 	QOpenGLShaderProgram m_program_has_yuv_shader;
+
+	QOpenGLBuffer m_drawing_vexteres;
 };
 
 VideoItem::VideoItem(QGraphicsItem *parent)
@@ -269,6 +298,8 @@ void VideoItem::viewportDestroyed()
 void VideoItem::resize(QSizeF newsize)
 {
 	my_size = newsize;
+	if (m_painter)
+		m_painter->set_viewport_size(my_size);
 }
 
 void VideoItem::paintImage(QPainter* painter)
@@ -296,7 +327,7 @@ void VideoItem::paintGL(QPainter* painter)
 		need_update_gltexture = false;
 	}
 
-	m_painter->paintGL(my_size, currentFrame);
+	m_painter->paintGL(currentFrame);
 	painter->endNativePainting();
 
 }
@@ -317,6 +348,8 @@ void VideoItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option,
 		m_painter = new VideoPainter(this);
         if (widget)
              connect(widget, SIGNAL(destroyed()), this, SLOT(viewportDestroyed()));
+
+		m_painter->set_viewport_size(my_size);
 	}
 
 	const QTransform oldTransform = painter->transform();
