@@ -8,7 +8,8 @@
     </qresource>
     <qresource prefix="/glsl">
         <file alias="nv12.frag">src/glsl/nv12.frag</file>
-        <file alias="yuv.frag">src/glsl/yuv.frag</file>
+        <file alias="yuv420.frag">src/glsl/yuv420.frag</file>
+        <file alias="yuv444.frag">src/glsl/yuv444.frag</file>
         <file alias="passthru.frag">src/glsl/passthru.frag</file>
         <file alias="videowindow.vert">src/glsl/videowindow.vert</file>
         <file alias="yuv2rgb.glsl">src/glsl/yuv2rgb.glsl</file>
