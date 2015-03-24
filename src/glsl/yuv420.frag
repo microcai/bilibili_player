@@ -1,6 +1,13 @@
 #version 130
 
-#line 2
+#ifdef GL_ES
+#define varying in
+#endif
+#line 6
+#undef lowp
+#undef mediump
+#undef highp
+
 uniform mediump vec2 texture_size;
 uniform mediump vec2 video_window_size;
 
@@ -17,12 +24,12 @@ mediump vec3 get_yuv_from_texture(in mediump vec2 tcoord)
 {
 	mediump vec3 yuv;
 
-	yuv.x = texture2D(texY, tcoord).r;
+	yuv.x = texture(texY, tcoord).r;
 
 	// Get the U and V values
-	yuv.y = texture2D(texU, tcoord).r;
+	yuv.y = texture(texU, tcoord).r;
 
-	yuv.z = texture2D(texV, tcoord).r;
+	yuv.z = texture(texV, tcoord).r;
 
 	return yuv;
 }
@@ -39,8 +46,10 @@ mediump vec4 mytexture2D(in mediump vec2 tcoord)
 	return vec4(rgb, 1.0);
 }
 
+out highp vec4 out_color;
+
 void main()
 {
 	// That was easy. :)
-	gl_FragColor = mytexture2D(vary_tex_cord);
+	out_color = mytexture2D(vary_tex_cord);
 }

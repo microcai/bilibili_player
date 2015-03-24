@@ -12,6 +12,6 @@
         <file alias="yuv444.frag">src/glsl/yuv444.frag</file>
         <file alias="passthru.frag">src/glsl/passthru.frag</file>
         <file alias="videowindow.vert">src/glsl/videowindow.vert</file>
-        <file alias="yuv2rgb.glsl">src/glsl/yuv2rgb.glsl</file>
+        <file alias="yuv2rgb.glsl">src/glsl/yuv2rgb.frag</file>
     </qresource>
 </RCC>

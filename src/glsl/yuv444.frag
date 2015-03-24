@@ -1,6 +1,14 @@
 #version 130
 
-#line 2
+#ifdef GL_ES
+#define varying in
+#endif
+#line 6
+
+#undef lowp
+#undef mediump
+#undef highp
+
 uniform mediump vec2 texture_size;
 uniform mediump vec2 video_window_size;
 
@@ -20,10 +28,10 @@ mediump vec3 get_yuv_from_texture(in mediump vec2 tcoord)
 	{
 		case 0: // QVideoFrame::Format_AYUV444
 		case 1: // QVideoFrame::Format_AYUV444_Premultiplied
-			yuv = texture2D(texYUV, tcoord).yzw;
+			yuv = texture(texYUV, tcoord).yzw;
 			break;
 		case 2: // QVideoFrame::Format_YUV444
-			yuv = texture2D(texYUV, tcoord).xyz;
+			yuv = texture(texYUV, tcoord).xyz;
 	}
 
 	return yuv;
@@ -41,8 +49,10 @@ mediump vec4 mytexture2D(in mediump vec2 tcoord)
 	return vec4(rgb, 1.0);
 }
 
+out highp vec4 out_color;
+
 void main()
 {
 	// That was easy. :)
-	gl_FragColor = mytexture2D(vary_tex_cord);
+	out_color = mytexture2D(vary_tex_cord);
 }

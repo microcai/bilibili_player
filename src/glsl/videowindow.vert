@@ -1,6 +1,11 @@
 #version 130
 
-#line 3
+#ifdef GL_ES
+#define varying out
+#define attribute in
+#endif
+#line 6
+
 uniform mat4 ModelViewMatrix;
 uniform mat4 ProjectionMatrix;
 uniform mat4 ModelViewProjectionMatrix;

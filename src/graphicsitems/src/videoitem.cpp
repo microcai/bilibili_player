@@ -125,6 +125,7 @@ public:
 		m_drawing_vexteres.setUsagePattern(QOpenGLBuffer::DynamicDraw);
 
 		m_common_shader_lib.compileSourceFile(":/glsl/yuv2rgb.glsl");
+		Q_ASSERT(m_common_shader_lib.isCompiled());
 		m_video_windows_shader.compileSourceFile(":/glsl/videowindow.vert");
 
 		m_program_yuv420p_shader.addShader(&m_video_windows_shader);
