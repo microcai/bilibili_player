@@ -2,7 +2,7 @@
 // varying vec4 gl_TexCoord[0];
 
 uniform sampler2D tex0;
-varying mediump vec2 vary_tex_cord;
+varying highp vec2 vary_tex_cord;
 
 void main()
 {

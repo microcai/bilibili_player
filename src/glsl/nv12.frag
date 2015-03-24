@@ -1,4 +1,4 @@
-
+#version 130
 #line 2
 uniform mediump vec2 texture_size;
 uniform mediump vec2 video_window_size;
@@ -15,54 +15,53 @@ const mediump vec3 Rcoeff = vec3(1.164,  0.000,  1.596);
 const mediump vec3 Gcoeff = vec3(1.164, -0.391, -0.813);
 const mediump vec3 Bcoeff = vec3(1.164,  2.018,  0.000);
 
-//brightness,对比度contrast,饱和度saturation 调整参数
+varying highp vec2 vary_tex_cord;
 
-uniform mediump float brightness;
-uniform mediump float contrast;
-uniform mediump float saturation;
-
-varying mediump vec2 vary_tex_cord;
-
-// 假冒的 tex 地址，其实只是插值产生纹理数值的整数坐标
-// varying vec2 fake_tex_cord;
-
-mediump vec3 yuv2rgb(in mediump vec3 yuv)
-{
-	mediump vec3 rgb;
-
-	yuv = clamp(yuv, 0.0, 1.0);
-
-	yuv += offset;
-
-	rgb.r = dot(yuv, Rcoeff);
-	rgb.g = dot(yuv, Gcoeff);
-	rgb.b = dot(yuv, Bcoeff);
-	return rgb;
-}
-
-mediump vec3 color_tweak(in mediump vec3 yuv)
-{
-	mediump float newY, newU, newV;
-
-	newY = ((yuv.x-0.5) * contrast + 0.5) * brightness;
-	newU = ((yuv.y-0.5) * saturation + 0.5);
-	newV = ((yuv.z-0.5) * saturation + 0.5);
-
-	return vec3(newY, newU, newV);
-}
+mediump vec3 color_tweak(in mediump vec3 yuv);
+mediump vec3 yuv2rgb(in mediump vec3 yuv);
 
 mediump vec3 get_yuv_from_texture(in mediump vec2 tcoord)
 {
 	mediump vec3 yuv;
+	float uv_int;
 
 	yuv.x = texture2D(texY, tcoord).r;
 
-	// Get the U and V values
-	yuv.y = 0.5;//texture2D(tex1, tcoord).r;
+	vec2 XY_even_odd = vary_tex_cord * texture_size;
 
-	yuv.z = 0.5;//texture2D(tex2, tcoord).r;
+	int XY_even_odd_x_rounded = int(round(XY_even_odd.x));
+
+	float little_diff = XY_even_odd.x - XY_even_odd_x_rounded ;
+
+	// Get the U and V values
+	int real_U_x = (XY_even_odd_x_rounded) & 0xFFFFFFFE;
+	int real_V_x = XY_even_odd_x_rounded | 1;
+
+	vec2 tex_cord_U, tex_cord_V;
+
+	tex_cord_U.y = tex_cord_V.y = vary_tex_cord.y;
+
+	tex_cord_U.x = float(real_U_x) / texture_size.x;
+	tex_cord_V.x = float(real_V_x) / texture_size.x;
+
+	tex_cord_U.x += 0.2 / texture_size.x;
+	tex_cord_V.x += 0.2 / texture_size.x;
+
+// 	tex_cord_U.x = vary_tex_cordY.x;
+// 	tex_cord_V.x = vary_tex_cordY.x;
+
+	float U = texture2D(texUV, tex_cord_U).x;
+	float V = texture2D(texUV, tex_cord_V).x;
+
+	yuv.y = ( float(U)); /// 4294967295.0);// - 0.5 ;//texture2D(tex1, tcoord).r;
+
+	yuv.z = (float(V)); /// 15.0);// - 0.5 ;//texture2D(tex2, tcoord).r;
 
 	return yuv;
+
+  	return vec3( yuv.z , 0.5,0.5);
+
+	return vec3(yuv.yz, 0.0);
 }
 
 mediump vec4 mytexture2D(in mediump vec2 tcoord)
@@ -75,11 +74,11 @@ mediump vec4 mytexture2D(in mediump vec2 tcoord)
 
 	// Do the color transform
 	rgb = yuv2rgb(color_tweak(yuv));
-	return vec4(rgb, 1.0);
+	return mediump vec4(rgb, 1.0);
 }
 
 void main()
 {
 	// That was easy. :)
-	gl_FragColor = vec4(1.0,0.0,0.1,1.0); //mytexture2D(vary_tex_cord);
+	gl_FragColor = mytexture2D(vary_tex_cord);
 }

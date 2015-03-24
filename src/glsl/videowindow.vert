@@ -1,4 +1,6 @@
+#version 130
 
+#line 3
 uniform mat4 ModelViewMatrix;
 uniform mat4 ProjectionMatrix;
 uniform mat4 ModelViewProjectionMatrix;
@@ -11,7 +13,7 @@ attribute highp vec4 attrVertex;
 // varying vec4 gl_TexCoord[0];
 
 
-varying mediump vec2 vary_tex_cord;
+varying highp vec2 vary_tex_cord;
 
 // 假冒的 tex 地址，其实只是插值产生纹理数值的整数坐标
 // varying vec2 fake_tex_cord;

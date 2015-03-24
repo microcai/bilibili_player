@@ -48,6 +48,7 @@
 #include <QMatrix4x4>
 #include <QPaintEngine>
 
+#include <QApplication>
 #include <QDebug>
 #include <QGraphicsWidget>
 
@@ -146,41 +147,34 @@ public:
 	VideoPainter(VideoItem* parent)
 		: m_drawing_vexteres(QOpenGLBuffer::VertexBuffer)
 		, m_video_windows_shader(QOpenGLShader::Vertex)
+		, m_common_shader_lib(QOpenGLShader::Fragment)
 	{
 		initializeGL();
 		m_drawing_vexteres.setUsagePattern(QOpenGLBuffer::DynamicDraw);
 
+		m_common_shader_lib.compileSourceFile(":/glsl/yuv2rgb.glsl");
 		m_video_windows_shader.compileSourceFile(":/glsl/videowindow.vert");
 
 		m_program_yuv420p_shader.addShader(&m_video_windows_shader);
+		m_program_yuv420p_shader.addShader(&m_common_shader_lib);
 		m_program_yuv420p_shader.addShaderFromSourceFile(QOpenGLShader::Fragment, ":/glsl/yuv.frag");
 
-// gl_Vertex 	0
-// gl_Normal 	2
-// gl_Color 	3
-// gl_SecondaryColor 	4
-// gl_FogCoord 	5
-// gl_MultiTexCoord0 	8
-// gl_MultiTexCoord1 	9
-// gl_MultiTexCoord2 	10
-// gl_MultiTexCoord3 	11
-// gl_MultiTexCoord4 	12
-// gl_MultiTexCoord5 	13
-// gl_MultiTexCoord6 	14
-// gl_MultiTexCoord7 	15
-//
 		m_program_yuv420p_shader.bindAttributeLocation("attrVertex", 1);
 		m_program_yuv420p_shader.link();
 
 		m_program_normalrgb_shader.addShader(&m_video_windows_shader);
+		m_program_normalrgb_shader.addShader(&m_common_shader_lib);
 		m_program_normalrgb_shader.addShaderFromSourceFile(QOpenGLShader::Fragment, ":/glsl/passthru.frag");
 		m_program_normalrgb_shader.bindAttributeLocation("attrVertex", 1);
 		m_program_normalrgb_shader.link();
 
 		m_program_nv12_shader.addShader(&m_video_windows_shader);
-		m_program_nv12_shader.addShaderFromSourceFile(QOpenGLShader::Fragment, ":/glsl/nv12.frag");
-		m_program_nv12_shader.bindAttributeLocation("attrVertex", 0);
-		m_program_nv12_shader.link();
+		m_program_nv12_shader.addShader(&m_common_shader_lib);
+		if (!m_program_nv12_shader.addShaderFromSourceFile(QOpenGLShader::Fragment, ":/glsl/nv12.frag"))
+			qApp->quit();
+		m_program_nv12_shader.bindAttributeLocation("attrVertex", 1);
+		if (!m_program_nv12_shader.link())
+			exit(1);
 	}
 
 	~VideoPainter()
@@ -220,6 +214,8 @@ public:
 		m_texture_UV->setFormat( QOpenGLTexture::R8_UNorm);
 		m_texture_UV->setMinificationFilter(QOpenGLTexture::Nearest);
 		m_texture_UV->setMagnificationFilter(QOpenGLTexture::Nearest);
+		m_texture_UV->setAutoMipMapGenerationEnabled(false);
+		m_texture_UV->setWrapMode(QOpenGLTexture::ClampToEdge);
 		m_texture_UV->allocateStorage();
 		m_texture_UV->setData(QOpenGLTexture::Red, QOpenGLTexture::UInt8, newframe.bits(1));
 
@@ -355,6 +351,7 @@ public:
 	// unsigned int texture !
 	QScopedPointer<QOpenGLTexture> m_texture_UV;
 
+	QOpenGLShader m_common_shader_lib;
 	QOpenGLShader m_video_windows_shader;
 
 	QOpenGLShaderProgram m_program_normalrgb_shader;
@@ -507,7 +504,6 @@ void VideoItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option,
 QList<QVideoFrame::PixelFormat> VideoItem::supportedPixelFormats(
         QAbstractVideoBuffer::HandleType handleType) const
 {
-// 	return QList<QVideoFrame::PixelFormat>()<<QVideoFrame::Format_NV12;
 	if (handleType == QAbstractVideoBuffer::NoHandle)
 	{
 		return QList<QVideoFrame::PixelFormat>()
@@ -516,6 +512,7 @@ QList<QVideoFrame::PixelFormat> VideoItem::supportedPixelFormats(
 				<< QVideoFrame::Format_ARGB32_Premultiplied
 				<< QVideoFrame::Format_RGB565
 				<< QVideoFrame::Format_RGB555
+				<< QVideoFrame::Format_NV12
 				<< QVideoFrame::Format_YUV420P;
 	}
 	else if(handleType == QAbstractVideoBuffer::GLTextureHandle)
