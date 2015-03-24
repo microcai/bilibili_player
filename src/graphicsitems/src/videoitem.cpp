@@ -37,9 +37,6 @@
 ** $QT_END_LICENSE$
 **
 ****************************************************************************/
-
-#include "videoitem.hpp"
-
 #include <memory>
 
 #include <QWidget>
@@ -52,6 +49,7 @@
 #include <QDebug>
 #include <QGraphicsWidget>
 
+#include "videoitem.hpp"
 class VideoPainter : public QOpenGLFunctions
 {
 	virtual void initializeGL()
@@ -516,3 +514,4 @@ bool VideoItem::present(const QVideoFrame &frame)
 	}
 }
 
+// #include "moc_videoitem.cpp"

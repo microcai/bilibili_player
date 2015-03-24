@@ -51,37 +51,40 @@ class VideoPainter;
 class VideoItem : public QAbstractVideoSurface, public QGraphicsItem
 {
     Q_OBJECT
-    Q_INTERFACES(QGraphicsItem)
+
+#ifndef Q_MOC_RUN
+    Q_INTERFACES(QAbstractVideoSurface QGraphicsItem)
+#endif
 
 public:
     explicit VideoItem(QGraphicsItem *parentItem = 0);
-    ~VideoItem();
+    virtual ~VideoItem();
 
-    QRectF boundingRect() const;
-    void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
-
-    void paintImage(QPainter *painter);
-
-	void paintGL(QPainter *painter);
+    virtual QRectF boundingRect() const;
+    virtual void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
 
     //video surface
-    QList<QVideoFrame::PixelFormat> supportedPixelFormats(
+    virtual QList<QVideoFrame::PixelFormat> supportedPixelFormats(
             QAbstractVideoBuffer::HandleType handleType = QAbstractVideoBuffer::GLTextureHandle) const;
 
 // 	virtual bool isFormatSupported(const QVideoSurfaceFormat& format) const;
 
 // 	virtual QVideoSurfaceFormat nearestFormat(const QVideoSurfaceFormat& format) const;
 
-    bool start(const QVideoSurfaceFormat &format);
-    void stop();
-    bool present(const QVideoFrame &frame);
+    virtual bool start(const QVideoSurfaceFormat &format);
+    virtual void stop();
+    virtual bool present(const QVideoFrame &frame);
 
 	void resize(QSizeF newsize);
 
 	template<typename T>
 	void setSize(const T&s){resize(s);}
 
-private Q_SLOTS:
+protected Q_SLOTS:
+
+    void paintImage(QPainter *painter);
+
+	void paintGL(QPainter *painter);
 
 	void viewportDestroyed();
 

@@ -828,6 +828,10 @@ void BPlayer::slot_mediaStatusChanged(QMediaPlayer::MediaStatus status)
  			break;
 		case QMediaPlayer::StalledMedia:
 		{
+			// 显示一个缓冲的圈圈
+
+
+
 			// 试试看切换到备用 url
 			auto cindex = play_list->currentIndex();
 			VideoURL& url = urls[play_list->currentIndex()];
