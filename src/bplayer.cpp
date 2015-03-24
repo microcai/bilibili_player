@@ -164,6 +164,10 @@ void BPlayer::start_play()
 		auto glwidget = new QOpenGLWidget(m_mainwindow);
 
 		QSurfaceFormat format;
+// 		format.setProfile(QSurfaceFormat::CoreProfile);
+
+// 		format.setRenderableType(QSurfaceFormat::OpenGLES);
+// 		format.setVersion(3,3);
 
 		format.setSwapBehavior(QSurfaceFormat::SingleBuffer);
 
@@ -490,6 +494,8 @@ void BPlayer::adjust_window_size()
 
 	if (video_surface)
 		video_surface->setSize(widget_size);
+
+// 	video_surface->setX(80);
 
 	position_slide->setGeometry(0, widget_size.height(), widget_size.width(), position_slide->geometry().height());
 

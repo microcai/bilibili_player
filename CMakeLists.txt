@@ -31,7 +31,7 @@ include_directories(${BULLET_INCLUDE_DIRS})
 add_definitions     ( ${BULLET_DEFINITIONS} )
 link_directories    ( ${BULLET_LIBRARY_DIRS} )
 
-link_libraries(${OPENSSL_LIBRARIES} ${Boost_LIBRARIES})
+link_libraries(${OPENSSL_LIBRARIES} ${Boost_LIBRARIES} GL)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 

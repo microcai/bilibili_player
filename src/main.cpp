@@ -20,7 +20,7 @@ void fuckoff_low_dpi_screen(const QScreen* screen)
 	if( screen->devicePixelRatio() != 1.0)
 	{
 		std::cout << "do not set devicePixelRatio, you idiot" << std::endl;
-		std::exit(1);
+// 		std::exit(1);
 	}
 }
 

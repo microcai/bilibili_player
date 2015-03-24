@@ -45,6 +45,8 @@
 #include <QVideoSurfaceFormat>
 #include <QOpenGLFunctions>
 #include <QOpenGLBuffer>
+#include <QMatrix4x4>
+#include <QPaintEngine>
 
 #include <QDebug>
 #include <QGraphicsWidget>
@@ -106,62 +108,36 @@ public:
 
 	}
 
-	virtual void paintGL(const QSizeF& video_size)
+	virtual void paintGL(const QMatrix4x4& project_matrix, const QMatrix4x4& model_matrix, const QSizeF& video_size)
 	{
-		glEnable(GL_TEXTURE_2D);
-
 		float brightness = 1.0;
 		float contrast = 1.0;
 		float saturation = 1.0;
 
 		m_current_program->bind();
 
-		std::shared_ptr<int> auto_cleanup;
+// uniform mat4 ModelViewMatrix;
+// uniform mat4 ProjectionMatrix;
+// uniform mat4 ModelViewProjectionMatrix;
+//
+		m_current_program->setUniformValue("ProjectionMatrix", project_matrix);
+		m_current_program->setUniformValue("ModelViewMatrix", model_matrix);
+		m_current_program->setUniformValue("ModelViewProjectionMatrix", project_matrix * model_matrix);
 
-		switch(render_type)
-		{
-			case render_direct_texture:
-				glBindTexture(GL_TEXTURE_2D,  GLuint(*_direct_texture_id));
-			break;
-			case render_YUV_texture:
-
-				// 把 设定传递给 shader 里的对应变量.
-				m_program_has_yuv_shader.setUniformValue("brightness", brightness);
-				m_program_has_yuv_shader.setUniformValue("contrast", contrast);
-				m_program_has_yuv_shader.setUniformValue("saturation", saturation);
-
-				// 把 shader 里的 tex0 tex1 tex2变量 和 0号 1号 2号 三个纹理缓存绑定.
-
-
-				m_texture_Y->bind(0);
-				m_texture_U->bind(1);
-				m_texture_V->bind(2);
-
-				auto_cleanup.reset((int*)nullptr, [this](int*)
-				{
-					m_texture_Y->release();
-					m_texture_U->release();
-					m_texture_V->release();
-
-				});
-		}
-
+		texture_setuper();
 
 		m_current_program->setUniformValue("video_window_size", QVector2D(viewport_size.width(), viewport_size.height()));
 		m_current_program->setUniformValue("texture_size", QVector2D(video_size.width(), video_size.height()));
-		m_current_program->setUniformValue("tex0", 0u);
-		m_current_program->setUniformValue("tex1", 1u);
-		m_current_program->setUniformValue("tex2", 2u);
 
  		m_drawing_vexteres.bind();
 
-		m_current_program->enableAttributeArray(0);
-		glVertexAttribPointer(0, 2, GL_DOUBLE, GL_FALSE, 0, 0);
+		m_current_program->enableAttributeArray(1);
+		glVertexAttribPointer(1, 2, GL_DOUBLE, GL_FALSE, 0, 0);
 
 		glDrawArrays(GL_POLYGON, 0, 4);
 
 		m_drawing_vexteres.release();
-// 		auto_cleanup.reset();
+		texture_cleanuper();
 		m_current_program->release();
 	}
 
@@ -169,13 +145,15 @@ public:
 
 	VideoPainter(VideoItem* parent)
 		: m_drawing_vexteres(QOpenGLBuffer::VertexBuffer)
+		, m_video_windows_shader(QOpenGLShader::Vertex)
 	{
 		initializeGL();
-
 		m_drawing_vexteres.setUsagePattern(QOpenGLBuffer::DynamicDraw);
 
-		m_program_has_yuv_shader.addShaderFromSourceFile(QOpenGLShader::Vertex, ":/glsl/videowindow.vert");
-		m_program_has_yuv_shader.addShaderFromSourceFile(QOpenGLShader::Fragment, ":/glsl/yuv.frag");
+		m_video_windows_shader.compileSourceFile(":/glsl/videowindow.vert");
+
+		m_program_yuv420p_shader.addShader(&m_video_windows_shader);
+		m_program_yuv420p_shader.addShaderFromSourceFile(QOpenGLShader::Fragment, ":/glsl/yuv.frag");
 
 // gl_Vertex 	0
 // gl_Normal 	2
@@ -191,18 +169,18 @@ public:
 // gl_MultiTexCoord6 	14
 // gl_MultiTexCoord7 	15
 //
-		m_program_has_yuv_shader.bindAttributeLocation("gl_Vertex", 0);
-		m_program_has_yuv_shader.bindAttributeLocation("gl_MultiTexCoord0", 8);
+		m_program_yuv420p_shader.bindAttributeLocation("attrVertex", 1);
+		m_program_yuv420p_shader.link();
 
-		m_program_has_yuv_shader.link();
+		m_program_normalrgb_shader.addShader(&m_video_windows_shader);
+		m_program_normalrgb_shader.addShaderFromSourceFile(QOpenGLShader::Fragment, ":/glsl/passthru.frag");
+		m_program_normalrgb_shader.bindAttributeLocation("attrVertex", 1);
+		m_program_normalrgb_shader.link();
 
-
-		m_program_only_vertex_shader.addShaderFromSourceFile(QOpenGLShader::Vertex, ":/glsl/videowindow.vert");
-		m_program_only_vertex_shader.addShaderFromSourceFile(QOpenGLShader::Fragment, ":/glsl/passthru.frag");
-		m_program_only_vertex_shader.bindAttributeLocation("gl_Vertex", 0);
-		m_program_only_vertex_shader.bindAttributeLocation("gl_MultiTexCoord0", 8);
-
-		m_program_only_vertex_shader.link();
+		m_program_nv12_shader.addShader(&m_video_windows_shader);
+		m_program_nv12_shader.addShaderFromSourceFile(QOpenGLShader::Fragment, ":/glsl/nv12.frag");
+		m_program_nv12_shader.bindAttributeLocation("attrVertex", 0);
+		m_program_nv12_shader.link();
 	}
 
 	~VideoPainter()
@@ -213,11 +191,59 @@ public:
 			m_texture_U->destroy();
 		if (m_texture_V)
 			m_texture_V->destroy();
-
-		m_program_has_yuv_shader.removeAllShaders();
-		m_program_only_vertex_shader.removeAllShaders();
 	}
 
+	void update_nv12_texture(const QVideoFrame& newframe)
+	{
+		if (!m_texture_Y)
+			m_texture_Y.reset(new QOpenGLTexture(QOpenGLTexture::Target2D));
+		if (!m_texture_UV)
+			m_texture_UV.reset(new QOpenGLTexture(QOpenGLTexture::Target2D));
+
+
+		auto vsize = newframe.size();
+		// update texture fome newframe
+		if (m_texture_Y->isCreated())
+			m_texture_Y->destroy();
+
+		m_texture_Y->setSize(newframe.bytesPerLine(0), vsize.height(), 0);
+		m_texture_Y->setFormat(QOpenGLTexture::R8_UNorm);
+		m_texture_Y->setMinificationFilter(QOpenGLTexture::LinearMipMapLinear);
+		m_texture_Y->setMagnificationFilter(QOpenGLTexture::LinearMipMapLinear);
+		m_texture_Y->allocateStorage();
+		m_texture_Y->setData(QOpenGLTexture::Red, QOpenGLTexture::UInt8, newframe.bits(0));
+
+		if(m_texture_UV->isCreated())
+			m_texture_UV->destroy();
+
+		m_texture_UV->setSize(newframe.bytesPerLine(1), vsize.height()/2, 0);
+		m_texture_UV->setFormat( QOpenGLTexture::R8_UNorm);
+		m_texture_UV->setMinificationFilter(QOpenGLTexture::Nearest);
+		m_texture_UV->setMagnificationFilter(QOpenGLTexture::Nearest);
+		m_texture_UV->allocateStorage();
+		m_texture_UV->setData(QOpenGLTexture::Red, QOpenGLTexture::UInt8, newframe.bits(1));
+
+		texture_cleanuper = [this]()
+		{
+			m_texture_Y->release();
+			m_texture_UV->release();
+		};
+
+		texture_setuper = [this]()
+		{
+			// 把 设定传递给 shader 里的对应变量.
+			m_program_nv12_shader.setUniformValue("brightness", 1.0f);
+			m_program_nv12_shader.setUniformValue("contrast", 1.0f);
+			m_program_nv12_shader.setUniformValue("saturation", 1.0f);
+
+			// 把 shader 里的 tex0 tex1 tex2变量 和 0号 1号 2号 三个纹理缓存绑定.
+			m_program_nv12_shader.setUniformValue("texY", 0u);
+			m_program_nv12_shader.setUniformValue("texUV", 1u);
+
+			m_texture_Y->bind(0);
+			m_texture_UV->bind(1);
+		};
+	}
 
 	void update_yuv420p_texture(const QVideoFrame& newframe)
 	{
@@ -259,53 +285,84 @@ public:
 		m_texture_V->setMagnificationFilter(QOpenGLTexture::LinearMipMapLinear);
 		m_texture_V->allocateStorage();
 		m_texture_V->setData(QOpenGLTexture::Red, QOpenGLTexture::UInt8, newframe.bits(2));
+
+
+		texture_cleanuper = [this]()
+		{
+			m_texture_Y->release();
+			m_texture_U->release();
+			m_texture_V->release();
+		};
+
+		texture_setuper = [this]()
+		{
+			// 把 设定传递给 shader 里的对应变量.
+			m_program_yuv420p_shader.setUniformValue("brightness", 1.0f);
+			m_program_yuv420p_shader.setUniformValue("contrast", 1.0f);
+			m_program_yuv420p_shader.setUniformValue("saturation", 1.0f);
+
+			// 把 shader 里的 tex0 tex1 tex2变量 和 0号 1号 2号 三个纹理缓存绑定.
+			m_program_yuv420p_shader.setUniformValue("texY", 0u);
+			m_program_yuv420p_shader.setUniformValue("texU", 1u);
+			m_program_yuv420p_shader.setUniformValue("texV", 2u);
+
+			m_texture_Y->bind(0);
+			m_texture_U->bind(1);
+			m_texture_V->bind(2);
+		};
 	}
 
 	void update_direct_texture(GLuint textureid)
 	{
-		_direct_texture_id.reset(new GLuint(textureid), [this](GLuint * p)
+		texture_setuper = [this, textureid]()
 		{
-			glDeleteTextures(1, p);
-		});
+			glBindTexture(GL_TEXTURE_2D,  textureid);
+		};
 	}
 
 	void update_texture(const QVideoFrame& newframe)
 	{
+		if(!m_drawing_vexteres.isCreated())
+			m_drawing_vexteres.create();
+
 		if (newframe.handleType() == QAbstractVideoBuffer::NoHandle && newframe.pixelFormat() == QVideoFrame::Format_YUV420P)
 		{
-			render_type = render_YUV_texture;
 			update_yuv420p_texture(newframe);
 
-			if(!m_drawing_vexteres.isCreated())
-				m_drawing_vexteres.create();
-
-			m_current_program = & m_program_has_yuv_shader;
+			m_current_program = & m_program_yuv420p_shader;
 		}
+		else if (newframe.handleType() == QAbstractVideoBuffer::NoHandle && newframe.pixelFormat() == QVideoFrame::Format_NV12)
+		{
+			m_current_program = & m_program_nv12_shader;
+			update_nv12_texture(newframe);
+		}
+
 		else if (newframe.handleType() == QAbstractVideoBuffer::GLTextureHandle)
 		{
 			// 已经是 texture 啦？
-
-			render_type = render_direct_texture;
-
 			update_direct_texture(newframe.handle().toUInt());
 
-			m_current_program = & m_program_only_vertex_shader;
+			m_current_program = & m_program_normalrgb_shader;
 		}
 	}
 
-	enum { render_YUV_texture, render_direct_texture } render_type;
-
-
 	QScopedPointer<QOpenGLTexture> m_texture_rgb;
-
-	std::shared_ptr<GLuint> _direct_texture_id;
 
 	QScopedPointer<QOpenGLTexture> m_texture_Y;
 	QScopedPointer<QOpenGLTexture> m_texture_U;
 	QScopedPointer<QOpenGLTexture> m_texture_V;
 
-	QOpenGLShaderProgram m_program_only_vertex_shader;
-	QOpenGLShaderProgram m_program_has_yuv_shader;
+	// unsigned int texture !
+	QScopedPointer<QOpenGLTexture> m_texture_UV;
+
+	QOpenGLShader m_video_windows_shader;
+
+	QOpenGLShaderProgram m_program_normalrgb_shader;
+	QOpenGLShaderProgram m_program_yuv420p_shader;
+	QOpenGLShaderProgram m_program_nv12_shader;
+
+	std::function<void()> texture_setuper;
+	std::function<void()> texture_cleanuper;
 
 	QOpenGLShaderProgram* m_current_program;
 
@@ -327,8 +384,8 @@ VideoItem::~VideoItem()
 
 QRectF VideoItem::boundingRect() const
 {
-	if( my_size.isValid())
-		return QRectF(QPointF(0,0), my_size);
+	if( viewport_size.isValid())
+		return QRectF(QPointF(0,0), viewport_size);
     return QRectF(QPointF(0,0), surfaceFormat().sizeHint());
 }
 
@@ -343,9 +400,9 @@ void VideoItem::viewportDestroyed()
 
 void VideoItem::resize(QSizeF newsize)
 {
-	my_size = newsize;
+	viewport_size = newsize;
 	if (m_painter)
-		m_painter->set_viewport_size(my_size);
+		m_painter->set_viewport_size(viewport_size);
 }
 
 void VideoItem::paintImage(QPainter* painter)
@@ -357,9 +414,10 @@ void VideoItem::paintImage(QPainter* painter)
 			imageFormat));
 }
 
-void VideoItem::paintGL(QPainter* painter)
+void VideoItem::paintGL(QPainter* painter, QWidget* widget)
 {
 	Q_ASSERT( QOpenGLContext::currentContext() );
+
 
 	painter->beginNativePainting();
 
@@ -373,7 +431,16 @@ void VideoItem::paintGL(QPainter* painter)
 		need_update_gltexture = false;
 	}
 
-	m_painter->paintGL(vsize);
+	QMatrix4x4 gl_Projection;
+	QMatrix4x4 gl_Model = sceneTransform();
+
+	if (! painter->paintEngine()->hasFeature(QPaintEngine::PixmapTransform))
+	{
+		gl_Model = sceneTransform() * painter->deviceTransform();
+	}
+
+	gl_Projection.ortho(0, painter->device()->width(), painter->device()->height(), 0, -1, 1);
+	m_painter->paintGL(gl_Projection, gl_Model, vsize);
 	painter->endNativePainting();
 }
 
@@ -394,7 +461,7 @@ void VideoItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option,
         if (widget)
              connect(widget, SIGNAL(destroyed()), this, SLOT(viewportDestroyed()));
 
-		m_painter->set_viewport_size(my_size);
+		m_painter->set_viewport_size(viewport_size);
 	}
 
 	const QTransform oldTransform = painter->transform();
@@ -409,11 +476,15 @@ void VideoItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option,
 	{
 		use_gl_painter = true;
 	}
+	else if (currentFrame.pixelFormat() == QVideoFrame::Format_NV12)
+	{
+		use_gl_painter = true;
+	}
 
 	if (surfaceFormat().scanLineDirection() == QVideoSurfaceFormat::BottomToTop)
 	{
 		painter->scale(1, -1);
-		painter->translate(0, - my_size.height());
+		painter->translate(0, - viewport_size.height());
 	}
 
 	if (!use_gl_painter)
@@ -426,7 +497,7 @@ void VideoItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option,
 	}
 	else
 	{
-		paintGL(painter);
+		paintGL(painter, widget);
 	}
 	painter->setTransform(oldTransform);
 
@@ -436,6 +507,7 @@ void VideoItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option,
 QList<QVideoFrame::PixelFormat> VideoItem::supportedPixelFormats(
         QAbstractVideoBuffer::HandleType handleType) const
 {
+// 	return QList<QVideoFrame::PixelFormat>()<<QVideoFrame::Format_NV12;
 	if (handleType == QAbstractVideoBuffer::NoHandle)
 	{
 		return QList<QVideoFrame::PixelFormat>()
@@ -469,14 +541,19 @@ bool VideoItem::start(const QVideoSurfaceFormat &format)
 	if (isFormatSupported(format))
 	{
 		imageFormat = QVideoFrame::imageFormatFromPixelFormat(format.pixelFormat());
-		imageSize = format.frameSize();
+
+		if (imageSize != format.frameSize())
+		{
+			prepareGeometryChange();
+			imageSize = format.frameSize();
+		}
+
 		framePainted = true;
 
 		qDebug() << format.pixelFormat();
 
-		QAbstractVideoSurface::start(format);
+		return QAbstractVideoSurface::start(format);
 
-		prepareGeometryChange();
 
 		return true;
 	} else {

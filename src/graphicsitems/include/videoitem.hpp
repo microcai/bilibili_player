@@ -50,30 +50,28 @@
 class VideoPainter;
 class VideoItem : public QAbstractVideoSurface, public QGraphicsItem
 {
-    Q_OBJECT
+	Q_OBJECT
 
 #ifndef Q_MOC_RUN
-    Q_INTERFACES(QAbstractVideoSurface QGraphicsItem)
+	Q_INTERFACES(QAbstractVideoSurface QGraphicsItem)
 #endif
 
 public:
-    explicit VideoItem(QGraphicsItem *parentItem = 0);
-    virtual ~VideoItem();
+	explicit VideoItem(QGraphicsItem *parentItem = 0);
+	virtual ~VideoItem();
 
-    virtual QRectF boundingRect() const;
-    virtual void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
+	virtual QRectF boundingRect() const;
+	virtual void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
 
-    //video surface
-    virtual QList<QVideoFrame::PixelFormat> supportedPixelFormats(
-            QAbstractVideoBuffer::HandleType handleType = QAbstractVideoBuffer::GLTextureHandle) const;
+	//video surface
+	virtual QList<QVideoFrame::PixelFormat> supportedPixelFormats(
+			QAbstractVideoBuffer::HandleType handleType = QAbstractVideoBuffer::GLTextureHandle) const;
 
-// 	virtual bool isFormatSupported(const QVideoSurfaceFormat& format) const;
+//	virtual bool isFormatSupported(const QVideoSurfaceFormat& format) const;
 
-// 	virtual QVideoSurfaceFormat nearestFormat(const QVideoSurfaceFormat& format) const;
-
-    virtual bool start(const QVideoSurfaceFormat &format);
-    virtual void stop();
-    virtual bool present(const QVideoFrame &frame);
+	virtual bool start(const QVideoSurfaceFormat &format);
+	virtual void stop();
+	virtual bool present(const QVideoFrame &frame);
 
 	void resize(QSizeF newsize);
 
@@ -82,9 +80,9 @@ public:
 
 protected Q_SLOTS:
 
-    void paintImage(QPainter *painter);
+	void paintImage(QPainter *painter);
 
-	void paintGL(QPainter *painter);
+	void paintGL(QPainter *painter, QWidget*);
 
 	void viewportDestroyed();
 
@@ -92,15 +90,15 @@ private:
 
 	QMutex m_render_lock;
 
-    QImage::Format imageFormat;
-    QSize imageSize;
+	QImage::Format imageFormat;
+	QSize imageSize;
 
-    QVideoFrame currentFrame;
+	QVideoFrame currentFrame;
 	bool need_update_gltexture;
-    bool framePainted;
+	bool framePainted;
 
 	VideoPainter * m_painter;
-    bool updatePaintDevice;
-    QSizeF my_size;
+	bool updatePaintDevice;
+	QSizeF viewport_size;
 };
 
