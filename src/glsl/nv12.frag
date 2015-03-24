@@ -6,15 +6,7 @@ uniform mediump vec2 video_window_size;
 uniform sampler2D texY; // Y
 uniform sampler2D texUV; // U
 
-uniform bool​ type_nv21; // NV12 or NV21
-
-// YUV offset
-// const vec3 offset = vec3(-0.0625, -0.5, -0.5);
-const mediump vec3 offset = vec3(-0.0625, -0.5, -0.5);
-// RGB coefficients
-const mediump vec3 Rcoeff = vec3(1.164,  0.000,  1.596);
-const mediump vec3 Gcoeff = vec3(1.164, -0.391, -0.813);
-const mediump vec3 Bcoeff = vec3(1.164,  2.018,  0.000);
+uniform bool type_nv21; // NV12 or NV21
 
 varying highp vec2 vary_tex_cord;
 

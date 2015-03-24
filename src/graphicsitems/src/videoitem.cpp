@@ -238,7 +238,7 @@ public:
 			m_program_nv12_shader.setUniformValue("texY", 0u);
 			m_program_nv12_shader.setUniformValue("texUV", 1u);
 
-			m_program_nv12_shader.setUniformValue("type_nv21", (GLint) !is_nv12);
+			m_program_nv12_shader.setUniformValue("type_nv21", (GLuint) !is_nv12);
 
 			m_texture_Y->bind(0);
 			m_texture_UV->bind(1);
@@ -331,6 +331,7 @@ public:
 			{
 				case QVideoFrame::Format_YUV420P:
 					m_current_program = & m_program_yuv420p_shader;
+					update_yuv420p_texture(newframe);
 					break;
 				case QVideoFrame::Format_NV12:
 				case QVideoFrame::Format_NV21:
