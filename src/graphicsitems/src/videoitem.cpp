@@ -58,6 +58,12 @@ class VideoPainter : public QOpenGLFunctions
 	virtual void initializeGL()
 	{
 		initializeOpenGLFunctions();
+
+		QOpenGLVersionProfile glversion( QOpenGLContext::currentContext()->format() );
+
+		qDebug() << glversion.isLegacyVersion();
+
+		qDebug() << "opengl version is " << glversion.version();
 	}
 
 public:

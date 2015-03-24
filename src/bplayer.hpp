@@ -17,12 +17,13 @@
 #include <QGraphicsItem>
 #include <QAbstractVideoSurface>
 #include <QGraphicsVideoItem>
+#include <QGraphicsScene>
 
 #include <QSlider>
 #include <QDomDocument>
 
 #include "videoitem.hpp"
-
+#include "qgraphicsbusybufferingitem.hpp"
 
 #include "screensaverinhibitor.hpp"
 #include "defs.hpp"
@@ -121,6 +122,8 @@ private:
 
 	QPointer<QGraphicsObject> play_indicator;
 	QPointer<QGraphicsObject> pause_indicator;
+
+	QGraphicsBusybufferingItem media_buffer_indicator;
 
 	QSlider * position_slide;
 

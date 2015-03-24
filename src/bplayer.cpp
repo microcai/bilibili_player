@@ -164,10 +164,14 @@ void BPlayer::start_play()
 		auto glwidget = new QOpenGLWidget(m_mainwindow);
 
 		QSurfaceFormat format;
-		format.setProfile(QSurfaceFormat::CompatibilityProfile);
+		format.setProfile(QSurfaceFormat::CoreProfile);
 
 // 		format.setRenderableType(QSurfaceFormat::OpenGLES);
-// 		format.setVersion(3,3);
+
+		format.setRenderableType(QSurfaceFormat::OpenGL);
+		format.setOption(QSurfaceFormat::DeprecatedFunctions);
+
+		format.setVersion(3,0);
 
 		format.setSwapBehavior(QSurfaceFormat::SingleBuffer);
 
@@ -178,7 +182,6 @@ void BPlayer::start_play()
 		scene->addItem(video_surface);
 
 		vplayer->setVideoOutput(video_surface);
-
 	}else
 	{
 		videoItem = new QGraphicsVideoItem;
@@ -266,6 +269,10 @@ void BPlayer::start_play()
 	connect(shortcut, SIGNAL(activated()), this, SLOT(fast_backwork()));
 
 	video_size = QSizeF(1,1);
+
+	media_buffer_indicator.hide();
+
+	scene->addItem(&media_buffer_indicator);
 
 	adjust_window_size();
 }
@@ -367,7 +374,7 @@ void BPlayer::add_barrage(const Moving_Comment& c)
 
 		danmu->setTransform(qtrans);
 	});
-	animation->start();
+	animation->start(QAbstractAnimation::DeleteWhenStopped);
 }
 
 void BPlayer::drag_slide(int p)
@@ -718,7 +725,7 @@ void BPlayer::toogle_play_pause()
 
 			pause_indicator->show();
 
-			ani_group->start();
+			ani_group->start(QAbstractAnimation::DeleteWhenStopped);
 
 			malloc_trim(0);
 
@@ -793,7 +800,7 @@ void BPlayer::toogle_play_pause()
 
 			play_indicator->show();
 
-			ani_group->start();
+			ani_group->start(QAbstractAnimation::DeleteWhenStopped);
 
 			break;
 		}
@@ -818,6 +825,8 @@ void BPlayer::play_state_changed(QMediaPlayer::State state)
 	}
 }
 
+
+
 void BPlayer::slot_mediaStatusChanged(QMediaPlayer::MediaStatus status)
 {
 
@@ -830,11 +839,19 @@ void BPlayer::slot_mediaStatusChanged(QMediaPlayer::MediaStatus status)
 // 			position_slide->setEnabled(true);
 
 			// 在这里取消缓冲滚动圈圈
+			media_buffer_indicator.hide();
 
  			break;
 		case QMediaPlayer::StalledMedia:
 		{
+ 			media_buffer_indicator.setPos(scene->sceneRect().center());
+			media_buffer_indicator.show();
 			// 显示一个缓冲的圈圈
+// 			auto stalled_indicator = new QGraphicsBusybufferingItem();
+
+// 			scene->addItem(stalled_indicator);
+
+// 			stalled_indicator
 
 
 
@@ -863,6 +880,9 @@ void BPlayer::slot_mediaStatusChanged(QMediaPlayer::MediaStatus status)
  				//play_list->setCurrentIndex(cindex);
 			}
 		}
+		default:
+			media_buffer_indicator.setPos(scene->sceneRect().center());
+			media_buffer_indicator.show();
 	}
 }
 
