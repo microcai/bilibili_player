@@ -189,6 +189,7 @@ public:
 
 	void update_nv12_texture(const QVideoFrame& newframe)
 	{
+
 		if (!m_texture_Y)
 			m_texture_Y.reset(new QOpenGLTexture(QOpenGLTexture::Target2D));
 		if (!m_texture_UV)
@@ -225,7 +226,8 @@ public:
 			m_texture_UV->release();
 		};
 
-		texture_setuper = [this]()
+		bool is_nv12 = newframe.pixelFormat() == QVideoFrame::Format_NV12;
+		texture_setuper = [this, is_nv12]()
 		{
 			// 把 设定传递给 shader 里的对应变量.
 			m_program_nv12_shader.setUniformValue("brightness", 1.0f);
@@ -235,6 +237,8 @@ public:
 			// 把 shader 里的 tex0 tex1 tex2变量 和 0号 1号 2号 三个纹理缓存绑定.
 			m_program_nv12_shader.setUniformValue("texY", 0u);
 			m_program_nv12_shader.setUniformValue("texUV", 1u);
+
+			m_program_nv12_shader.setUniformValue("type_nv21", (GLint) !is_nv12);
 
 			m_texture_Y->bind(0);
 			m_texture_UV->bind(1);
@@ -321,18 +325,21 @@ public:
 		if(!m_drawing_vexteres.isCreated())
 			m_drawing_vexteres.create();
 
-		if (newframe.handleType() == QAbstractVideoBuffer::NoHandle && newframe.pixelFormat() == QVideoFrame::Format_YUV420P)
+		if (newframe.handleType() == QAbstractVideoBuffer::NoHandle)
 		{
-			update_yuv420p_texture(newframe);
-
-			m_current_program = & m_program_yuv420p_shader;
+			switch(newframe.pixelFormat())
+			{
+				case QVideoFrame::Format_YUV420P:
+					m_current_program = & m_program_yuv420p_shader;
+					break;
+				case QVideoFrame::Format_NV12:
+				case QVideoFrame::Format_NV21:
+					m_current_program = & m_program_nv12_shader;
+					update_nv12_texture(newframe);
+				default:
+					break;
+			}
 		}
-		else if (newframe.handleType() == QAbstractVideoBuffer::NoHandle && newframe.pixelFormat() == QVideoFrame::Format_NV12)
-		{
-			m_current_program = & m_program_nv12_shader;
-			update_nv12_texture(newframe);
-		}
-
 		else if (newframe.handleType() == QAbstractVideoBuffer::GLTextureHandle)
 		{
 			// 已经是 texture 啦？
@@ -513,6 +520,7 @@ QList<QVideoFrame::PixelFormat> VideoItem::supportedPixelFormats(
 				<< QVideoFrame::Format_RGB565
 				<< QVideoFrame::Format_RGB555
 				<< QVideoFrame::Format_NV12
+				<< QVideoFrame::Format_NV21
 				<< QVideoFrame::Format_YUV420P;
 	}
 	else if(handleType == QAbstractVideoBuffer::GLTextureHandle)

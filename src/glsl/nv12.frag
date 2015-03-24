@@ -6,6 +6,7 @@ uniform mediump vec2 video_window_size;
 uniform sampler2D texY; // Y
 uniform sampler2D texUV; // U
 
+uniform bool​ type_nv21; // NV12 or NV21
 
 // YUV offset
 // const vec3 offset = vec3(-0.0625, -0.5, -0.5);
@@ -47,21 +48,20 @@ mediump vec3 get_yuv_from_texture(in mediump vec2 tcoord)
 	tex_cord_U.x += 0.2 / texture_size.x;
 	tex_cord_V.x += 0.2 / texture_size.x;
 
-// 	tex_cord_U.x = vary_tex_cordY.x;
-// 	tex_cord_V.x = vary_tex_cordY.x;
-
 	float U = texture2D(texUV, tex_cord_U).x;
 	float V = texture2D(texUV, tex_cord_V).x;
 
-	yuv.y = ( float(U)); /// 4294967295.0);// - 0.5 ;//texture2D(tex1, tcoord).r;
-
-	yuv.z = (float(V)); /// 15.0);// - 0.5 ;//texture2D(tex2, tcoord).r;
+	if ( type_nv21 )
+	{
+		yuv.y = U;
+		yuv.z = V;
+	}else
+	{
+		yuv.y = V;
+		yuv.z = U;
+	}
 
 	return yuv;
-
-  	return vec3( yuv.z , 0.5,0.5);
-
-	return vec3(yuv.yz, 0.0);
 }
 
 mediump vec4 mytexture2D(in mediump vec2 tcoord)
