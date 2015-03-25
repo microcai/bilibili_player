@@ -880,6 +880,11 @@ void BPlayer::slot_mediaStatusChanged(QMediaPlayer::MediaStatus status)
  				//play_list->setCurrentIndex(cindex);
 			}
 		}
+
+		break;
+		case QMediaPlayer::NoMedia:
+			media_buffer_indicator.hide();
+			break;
 		default:
 			media_buffer_indicator.setPos(scene->sceneRect().center());
 			media_buffer_indicator.show();
