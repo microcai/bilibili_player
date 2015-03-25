@@ -73,6 +73,7 @@ int main(int argc, char* argv[])
 	cliparser.addOption({"use-bullet", "use bullet engine to manage danmaku"});
 	cliparser.addOption({"videourl", "alternative video url, useful for play local video file while still  be able to see danmaku", "uri"});
 	cliparser.addOption({"nogl", "do not using opengl to render the video and danmaku"});
+	cliparser.addOption({"no-minimalsize", "allow resize freely"});
 	cliparser.addOption({"force-aspect", "force video aspect", "16:9"});
 
 	cliparser.process(app);
@@ -109,7 +110,7 @@ int main(int argc, char* argv[])
 
 	if (cliparser.isSet("nogl"))
 	{
-		player.setProperty("UseOpenGL", ! (cliparser.value("nongl") != "no"));
+		player.setProperty("UseOpenGL", ! (cliparser.value("nogl") != "no"));
 	}
 
 	if (cliparser.isSet("force-aspect"))
@@ -117,6 +118,11 @@ int main(int argc, char* argv[])
 		player.setProperty("VideoAspect", cliparser.value("force-aspect"));
 
 		qDebug() << "force aspect to :" <<  cliparser.value("force-aspect");
+	}
+
+	if (cliparser.isSet("no-minimalsize"))
+	{
+		player.setProperty("AllowAnySize", (cliparser.value("no-minimalsize") != "no"));
 	}
 
 	auto bilibili_res = new BiliBiliRes(bilibili_url.toStdString());

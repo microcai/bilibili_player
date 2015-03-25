@@ -25,6 +25,7 @@
 #include <QOpenGLWidget>
 #include <QGraphicsVideoItem>
 #include <QSurfaceFormat>
+#include <QResizeEvent>
 
 #ifdef HAVE_KF5_WINDOWSYSTEM
 #include <KWindowSystem>
@@ -34,6 +35,25 @@
 
 #include "bplayer.hpp"
 #include "bilibilires.hpp"
+
+
+class MyMainWindow : public QMainWindow
+{
+	Q_OBJECT
+public:
+    explicit MyMainWindow(QWidget *parent = 0, Qt::WindowFlags flags = 0)
+		:QMainWindow(parent, flags)
+	{
+	}
+
+	virtual void resizeEvent(QResizeEvent* e)
+	{
+		resized(e->size(), e->oldSize());
+		QMainWindow::resizeEvent(e);
+	}
+Q_SIGNALS:
+	void resized(QSizeF newsize, QSizeF oldsize);
+};
 
 
 static Moving_Comments to_comments(const QDomDocument& barrage)
@@ -131,7 +151,10 @@ void BPlayer::start_play()
 	if (urls.empty())
 		exit(1);
 	// now start playing!
-	m_mainwindow = new QMainWindow;
+	m_mainwindow = new MyMainWindow;
+
+	if (allow_any_resize)
+		m_mainwindow->setMinimumSize(1,1);
 
 	scene = new QGraphicsScene(m_mainwindow);
 	graphicsView = new QGraphicsView(scene);
@@ -275,6 +298,26 @@ void BPlayer::start_play()
 	scene->addItem(&media_buffer_indicator);
 
 	adjust_window_size();
+
+	connect((MyMainWindow*)m_mainwindow, &MyMainWindow::resized, [this](QSizeF newsize, QSizeF)
+	{
+		// 判断用户是否启用了允许非整数缩放
+
+		if (allow_any_resize)
+		{
+			// 计算 scene 大小
+
+			QSizeF adjnewsize = newsize;
+			adjnewsize.rheight() -= position_slide->height();
+
+			QSizeF newscence_rect = video_size;
+
+			newscence_rect.scale(adjnewsize, Qt::KeepAspectRatio);
+
+			adjust_window_size(newscence_rect);
+		}
+
+	});
 }
 
 void BPlayer::add_barrage(const Moving_Comment& c)
@@ -490,23 +533,19 @@ void BPlayer::durationChanged(qint64 duration)
 	position_slide->setRange(0, duration);
 }
 
-void BPlayer::adjust_window_size()
+void BPlayer::adjust_window_size(QSizeF video_widget_size)
 {
-	auto widget_size = video_size;
-	if (!qIsNaN(zoom_level))
-		widget_size = video_size * zoom_level;
-
 	if (videoItem)
-		videoItem->setSize(widget_size);
+		videoItem->setSize(video_widget_size);
 
 	if (video_surface)
-		video_surface->setSize(widget_size);
+		video_surface->setSize(video_widget_size);
 
 // 	video_surface->setX(80);
 
-	position_slide->setGeometry(0, widget_size.height(), widget_size.width(), position_slide->geometry().height());
+	position_slide->setGeometry(0, video_widget_size.height(), video_widget_size.width(), position_slide->geometry().height());
 
-	QSizeF player_visiable_area_size = widget_size;
+	QSizeF player_visiable_area_size = video_widget_size;
 
 	player_visiable_area_size.rheight() += position_slide->geometry().height();
 
@@ -514,10 +553,18 @@ void BPlayer::adjust_window_size()
 
 	auto adjusted_size = graphicsView->minimumSizeHint();
 
-
 	scene->setSceneRect(QRectF(QPointF(), player_visiable_area_size));
 
 	m_danmumgr.video_width = video_size.width();
+}
+
+void BPlayer::adjust_window_size()
+{
+	auto widget_size = video_size;
+	if (!qIsNaN(zoom_level))
+		widget_size = video_size * zoom_level;
+
+	adjust_window_size(widget_size);
 
 	if (!m_mainwindow->isFullScreen())
 		m_mainwindow->adjustSize();
@@ -893,3 +940,4 @@ void BPlayer::slot_mediaStatusChanged(QMediaPlayer::MediaStatus status)
 	}
 }
 
+#include "bplayer.moc"

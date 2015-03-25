@@ -34,6 +34,7 @@ class BPlayer : public QObject
 	Q_OBJECT
 	Q_PROPERTY(bool UseBullet MEMBER  use_bullet)
 	Q_PROPERTY(bool UseOpenGL MEMBER  use_gl)
+	Q_PROPERTY(double AllowAnySize MEMBER allow_any_resize)
 	Q_PROPERTY(QString VideoAspect MEMBER  VideoAspect)
     Q_PROPERTY(double ZoomLevel READ ZoomLevel WRITE SetZoomLevel NOTIFY ZoomLevelChanged)
     Q_PROPERTY(double full_screen READ full_screen_mode WRITE set_full_screen_mode NOTIFY full_screen_mode_changed)
@@ -95,6 +96,7 @@ private Q_SLOTS:
 
 	void slot_mediaChanged(int);
 
+	void adjust_window_size(QSizeF video_widget_size);
 	void adjust_window_size();
 
 	void play_state_changed(QMediaPlayer::State);
@@ -143,4 +145,5 @@ private:
 	bool use_bullet = false;
 	bool use_gl = true;
 	QString VideoAspect = "auto";
+	bool allow_any_resize = false;
 };
