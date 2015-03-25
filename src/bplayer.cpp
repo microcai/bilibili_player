@@ -525,6 +525,8 @@ void BPlayer::adjust_window_size()
 
 void BPlayer::zoom_in()
 {
+	if(zoom_level <= 1.0)
+		SetZoomLevel(zoom_level*2);
 	if (zoom_level < 8)
 		SetZoomLevel(zoom_level + 1.0);
 	if(zoom_level >= 8.0)
@@ -536,7 +538,7 @@ void BPlayer::zoom_out()
 	if(zoom_level >= 2.0)
 		SetZoomLevel(zoom_level - 1.0);
 	if(zoom_level <= 1.0)
-		zoom_level = 1.0;
+		SetZoomLevel(zoom_level/2);
 }
 
 void BPlayer::toogle_full_screen_mode()

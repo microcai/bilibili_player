@@ -85,10 +85,20 @@ int main(int argc, char* argv[])
 		return 0;
 	}
 
+	QString bilibili_url;
 	// argv[1] should by the url to play
- 	QString bilibili_url = cliparser.positionalArguments().at(0);
 
-	std::cerr << "play bilibili url: " << bilibili_url.toStdString() << std::endl;
+	if (cliparser.positionalArguments().size() >= 1)
+	{
+		bilibili_url = cliparser.positionalArguments().at(0);
+		std::cerr << "play bilibili url: " << bilibili_url.toStdString() << std::endl;
+
+	}else
+	{
+		std::cerr << "\n\n\n -- 必须要有 bilibili 地址哦！ -- \n 以下是帮助" << std::endl;
+
+		cliparser.showHelp(1);
+	}
 
 	BPlayer player;
 
