@@ -3,6 +3,7 @@
 #include <QApplication>
 #include <QString>
 #include <QScreen>
+#include <QMessageBox>
 
 #include "bplayer.hpp"
 #include "bilibilires.hpp"
@@ -15,6 +16,33 @@ void fuckoff_low_dpi_screen(const QScreen* screen)
 	if ( screen->logicalDotsPerInch() < screen->physicalDotsPerInch())
 	{
 		std::cout << "you idiot! stupid dumb! Go fuck you self, have't you see the font tooo small for you?" << std::endl;
+
+		QString msg = QString("你的屏幕实际 DPI 为 %1, 但是系统才设置 %2 的 DPI, 难道你不觉得字体很小看着不舒服么？\n"
+		"赶紧打开系统设置，将 DPI 设置的比屏幕 DPI 大点！建议你设置为 %3").arg(screen->physicalDotsPerInch()).arg(screen->logicalDotsPerInch())
+		.arg([](qreal phydpi){
+			if ( phydpi < 96)
+				return 96;
+			if ( phydpi < 115)
+				return 120;
+			if  (phydpi < 130)
+				return 144;
+			if (phydpi <= 182)
+				return 192;
+			if (phydpi <= 230)
+				return 240;
+			if(phydpi <= 260)
+				return 288;
+			if (phydpi < 330)
+				return 384;
+			if (phydpi < 500)
+				return 576;
+
+			return (int(qRound(phydpi+1))/ 8 + 1) * 8;
+		}(screen->physicalDotsPerInch()));
+
+		QMessageBox box;
+		box.setText(msg);
+		box.exec();
 	}
 
 	if( screen->devicePixelRatio() != 1.0)
