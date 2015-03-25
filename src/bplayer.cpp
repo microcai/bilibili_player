@@ -116,7 +116,13 @@ BPlayer::BPlayer(QObject * parent)
 
 	play_list->setPlaybackMode(QMediaPlaylist::Sequential);
 
-	connect(this, SIGNAL(ZoomLevelChanged(double)), this, SLOT(adjust_window_size()));
+	connect(this, &BPlayer::ZoomLevelChanged, [this](double)
+	{
+		m_mainwindow->setMinimumSize(0,0);
+		adjust_window_size();
+		if (allow_any_resize)
+			m_mainwindow->setMinimumSize(1,1);
+	});
 
 	connect(this, SIGNAL(full_screen_mode_changed(bool)), this, SLOT(slot_full_screen_mode_changed(bool)));
 }
@@ -755,23 +761,13 @@ void BPlayer::toogle_play_pause()
 
 			scene->addItem(pause_indicator);
 
-// 			pause_indicator->setTransformOriginPoint();
-
 			auto effect = new QGraphicsOpacityEffect;
 
 			pause_indicator->setGraphicsEffect(effect);
 
 			auto ani_group = new QParallelAnimationGroup(svg_item);
-			connect(ani_group, SIGNAL(finished()), ani_group, SLOT(deleteLater()));
-
 			auto ani = new QPropertyAnimation(effect, "opacity", ani_group);
 			auto ani_4 = new QPropertyAnimation(svg_item, "scale", ani_group);
-
-// 			connect(ani_4, &QVariantAnimation::valueChanged, svg_item, [svg_item, this](const QVariant & value)
-// 			{
-// 				pause_indicator->setX(video_size.width() * zoom_level / 2 - (svg_item->boundingRect().size() * value.toReal()).width()/2);
-// 				pause_indicator->setY(video_size.height() * zoom_level / 2 - (svg_item->boundingRect().size() * value.toReal()).height()/2);
-// 			});
 
 			ani_group->addAnimation(ani);
 			ani_group->addAnimation(ani_4);
@@ -833,13 +829,6 @@ void BPlayer::toogle_play_pause()
 			auto ani_3 = new QPropertyAnimation(effect, "opacity", ani_group_2);
 			auto ani_4 = new QPropertyAnimation(svg_item, "scale", ani_group_2);
 
-// 			connect(ani_4, &QVariantAnimation::valueChanged, svg_item, [svg_item, this](const QVariant & value)
-// 			{
-
-// // 				play_indicator->setX(scene->sceneRect().width() * zoom_level / 2 - (svg_item->boundingRect().size() * value.toReal()).width()/2);
-// // 				play_indicator->setY(scene->sceneRect().height() * zoom_level / 2 - (svg_item->boundingRect().size() * value.toReal()).height()/2);
-// 			});
-
 			ani_3->setDuration(750);
 			ani_3->setStartValue(0.6);
 			ani_3->setEndValue(0.0);
@@ -857,11 +846,7 @@ void BPlayer::toogle_play_pause()
 
 			ani_group->addAnimation(ani_group_2);
 
-			connect(ani_group, SIGNAL(finished()), ani_group, SLOT(deleteLater()), Qt::QueuedConnection);
-
-// 			play_indicator->setX(video_size.width() * zoom_level / 2 - svg_item->boundingRect().size().width()/2);
-// 			play_indicator->setY(video_size.height() * zoom_level / 2 - svg_item->boundingRect().size().height()/2);
-
+			connect(ani_group, SIGNAL(finished()), play_indicator, SLOT(deleteLater()));
 			play_indicator->setPos(scene->sceneRect().center());
 			play_indicator->show();
 
