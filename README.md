@@ -30,7 +30,7 @@ bilibili_player 使用 OpenGL 硬件加速绘制视频和弹幕。确保您的�
 Gentoo 用户请使用 [gentoo-zh overlay](https://github.com/microcai/gentoo-zh)
 
 	layman -f -a gentoo-zh
-	emerge bilibili_player
+	emerge bilibili-player
 
 其他用户， 请使用 cmake 编译。 需要 cmake >= 3.1 (是的，就歧视ubnutu 用户怎么着？ 谁用谁傻逼。 老版本=稳定？ 稳定你麻痹)
 
