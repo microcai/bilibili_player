@@ -19,6 +19,11 @@ Linux 版 bilibili 因为 flash 版本停滞于 11 的原因, 许多视频无限
 
 bilibili_player 依赖 Qt5Widgets Qt5Multimedia Qt5Network Qt5Xml 以及开源物理引擎 [bullet](https://github.com/bulletphysics/bullet3)
 
+### OpenGL 注意事项
+
+bilibili_player 使用 OpenGL 硬件加速绘制视频和弹幕。确保您的显卡支持 OpenGL >= 3.0。通常来说近十年内生产的显卡都支持。
+如果opengl下发现黑屏白屏红屏之类的情况，请试试看加 --nogl 参数。
+
 ## 编译
 
 Gentoo 用户请使用 [gentoo-zh overlay](https://github.com/microcai/gentoo-zh)
@@ -27,6 +32,4 @@ Gentoo 用户请使用 [gentoo-zh overlay](https://github.com/microcai/gentoo-zh
 	emerge bilibili_player
 
 其他用户， 请使用 cmake 编译。 需要 cmake >= 3.1
-
-
 
