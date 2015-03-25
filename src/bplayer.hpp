@@ -24,6 +24,7 @@
 
 #include "videoitem.hpp"
 #include "qgraphicsbusybufferingitem.hpp"
+#include "graphicssvgitem.hpp"
 
 #include "screensaverinhibitor.hpp"
 #include "defs.hpp"

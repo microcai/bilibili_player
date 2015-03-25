@@ -294,8 +294,6 @@ void BPlayer::start_play()
 
 	video_size = QSizeF(1,1);
 
-	media_buffer_indicator.hide();
-
 	scene->addItem(&media_buffer_indicator);
 
 	adjust_window_size();
@@ -556,7 +554,12 @@ void BPlayer::adjust_window_size(QSizeF video_widget_size)
 	auto adjusted_size = graphicsView->minimumSizeHint();
 
 	scene->setSceneRect(QRectF(QPointF(), player_visiable_area_size));
+	media_buffer_indicator.setPos(scene->sceneRect().center());
 
+	if (pause_indicator)
+		pause_indicator->setPos(scene->sceneRect().center());
+	if (play_indicator)
+		play_indicator->setPos(scene->sceneRect().center());
 	m_danmumgr.video_width = video_size.width();
 }
 
@@ -731,6 +734,9 @@ qint64 BPlayer::map_position_from_media(qint64 pos)
 	}
 	return pos;
 }
+
+#include <QSvgRenderer>
+
 void BPlayer::toogle_play_pause()
 {
 	switch (vplayer->state())
@@ -744,10 +750,12 @@ void BPlayer::toogle_play_pause()
 			if (pause_indicator)
 				pause_indicator->deleteLater();
 
-			QGraphicsSvgItem * svg_item = new QGraphicsSvgItem("://res/pause.svg");
+			QGraphicsSvgItem * svg_item = new GraphicsSvgItem("://res/pause.svg");
 			pause_indicator = svg_item;
 
 			scene->addItem(pause_indicator);
+
+// 			pause_indicator->setTransformOriginPoint();
 
 			auto effect = new QGraphicsOpacityEffect;
 
@@ -759,11 +767,11 @@ void BPlayer::toogle_play_pause()
 			auto ani = new QPropertyAnimation(effect, "opacity", ani_group);
 			auto ani_4 = new QPropertyAnimation(svg_item, "scale", ani_group);
 
-			connect(ani_4, &QVariantAnimation::valueChanged, svg_item, [svg_item, this](const QVariant & value)
-			{
-				pause_indicator->setX(video_size.width() * zoom_level / 2 - (svg_item->boundingRect().size() * value.toReal()).width()/2);
-				pause_indicator->setY(video_size.height() * zoom_level / 2 - (svg_item->boundingRect().size() * value.toReal()).height()/2);
-			});
+// 			connect(ani_4, &QVariantAnimation::valueChanged, svg_item, [svg_item, this](const QVariant & value)
+// 			{
+// 				pause_indicator->setX(video_size.width() * zoom_level / 2 - (svg_item->boundingRect().size() * value.toReal()).width()/2);
+// 				pause_indicator->setY(video_size.height() * zoom_level / 2 - (svg_item->boundingRect().size() * value.toReal()).height()/2);
+// 			});
 
 			ani_group->addAnimation(ani);
 			ani_group->addAnimation(ani_4);
@@ -777,6 +785,7 @@ void BPlayer::toogle_play_pause()
 			ani->setStartValue(0.0);
 			ani->setEndValue(0.7);
 
+			pause_indicator->setPos(scene->sceneRect().center());
 			pause_indicator->show();
 
 			ani_group->start(QAbstractAnimation::DeleteWhenStopped);
@@ -794,7 +803,7 @@ void BPlayer::toogle_play_pause()
 			if (play_indicator)
 				play_indicator->deleteLater();
 
-			QGraphicsSvgItem * svg_item = new QGraphicsSvgItem("://res/play.svg");
+			QGraphicsSvgItem * svg_item = new GraphicsSvgItem("://res/play.svg");
 			play_indicator = svg_item;
 
 			scene->addItem(play_indicator);
@@ -824,11 +833,12 @@ void BPlayer::toogle_play_pause()
 			auto ani_3 = new QPropertyAnimation(effect, "opacity", ani_group_2);
 			auto ani_4 = new QPropertyAnimation(svg_item, "scale", ani_group_2);
 
-			connect(ani_4, &QVariantAnimation::valueChanged, svg_item, [svg_item, this](const QVariant & value)
-			{
-				play_indicator->setX(video_size.width() * zoom_level / 2 - (svg_item->boundingRect().size() * value.toReal()).width()/2);
-				play_indicator->setY(video_size.height() * zoom_level / 2 - (svg_item->boundingRect().size() * value.toReal()).height()/2);
-			});
+// 			connect(ani_4, &QVariantAnimation::valueChanged, svg_item, [svg_item, this](const QVariant & value)
+// 			{
+
+// // 				play_indicator->setX(scene->sceneRect().width() * zoom_level / 2 - (svg_item->boundingRect().size() * value.toReal()).width()/2);
+// // 				play_indicator->setY(scene->sceneRect().height() * zoom_level / 2 - (svg_item->boundingRect().size() * value.toReal()).height()/2);
+// 			});
 
 			ani_3->setDuration(750);
 			ani_3->setStartValue(0.6);
@@ -849,9 +859,10 @@ void BPlayer::toogle_play_pause()
 
 			connect(ani_group, SIGNAL(finished()), ani_group, SLOT(deleteLater()), Qt::QueuedConnection);
 
-			play_indicator->setX(video_size.width() * zoom_level / 2 - svg_item->boundingRect().size().width()/2);
-			play_indicator->setY(video_size.height() * zoom_level / 2 - svg_item->boundingRect().size().height()/2);
+// 			play_indicator->setX(video_size.width() * zoom_level / 2 - svg_item->boundingRect().size().width()/2);
+// 			play_indicator->setY(video_size.height() * zoom_level / 2 - svg_item->boundingRect().size().height()/2);
 
+			play_indicator->setPos(scene->sceneRect().center());
 			play_indicator->show();
 
 			ani_group->start(QAbstractAnimation::DeleteWhenStopped);
@@ -898,7 +909,6 @@ void BPlayer::slot_mediaStatusChanged(QMediaPlayer::MediaStatus status)
  			break;
 		case QMediaPlayer::StalledMedia:
 		{
- 			media_buffer_indicator.setPos(scene->sceneRect().center());
 			media_buffer_indicator.show();
 			// 显示一个缓冲的圈圈
 // 			auto stalled_indicator = new QGraphicsBusybufferingItem();
@@ -940,7 +950,6 @@ void BPlayer::slot_mediaStatusChanged(QMediaPlayer::MediaStatus status)
 			media_buffer_indicator.hide();
 			break;
 		default:
-			media_buffer_indicator.setPos(scene->sceneRect().center());
 			media_buffer_indicator.show();
 	}
 }
