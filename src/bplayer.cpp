@@ -10,6 +10,7 @@
 #include <QParallelAnimationGroup>
 #include <QSequentialAnimationGroup>
 #include <QString>
+#include <QWindow>
 #include <QMainWindow>
 #include <QTimer>
 #include <QVBoxLayout>
@@ -303,7 +304,7 @@ void BPlayer::start_play()
 	{
 		// 判断用户是否启用了允许非整数缩放
 
-		if (allow_any_resize)
+		if (allow_any_resize && !m_mainwindow->isFullScreen())
 		{
 			// 计算 scene 大小
 
@@ -541,13 +542,14 @@ void BPlayer::adjust_window_size(QSizeF video_widget_size)
 	if (video_surface)
 		video_surface->setSize(video_widget_size);
 
-// 	video_surface->setX(80);
+	bool is_full_screen = m_mainwindow->isFullScreen();
 
 	position_slide->setGeometry(0, video_widget_size.height(), video_widget_size.width(), position_slide->geometry().height());
 
 	QSizeF player_visiable_area_size = video_widget_size;
 
-	player_visiable_area_size.rheight() += position_slide->geometry().height();
+	if(!is_full_screen)
+		player_visiable_area_size.rheight() += position_slide->geometry().height();
 
 	graphicsView->setFixedSize(player_visiable_area_size.toSize());
 
@@ -618,6 +620,9 @@ void BPlayer::slot_full_screen_mode_changed(bool)
 		graphicsView->setCursor(Qt::BlankCursor);
 		if (videoItem)
 			videoItem->setCursor(Qt::BlankCursor);
+
+		if (allow_any_resize)
+			adjust_window_size( m_mainwindow->windowHandle()->screen()->size());
 	}
 	else
 	{
