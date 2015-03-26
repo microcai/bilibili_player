@@ -4,6 +4,7 @@
 #include <QString>
 #include <QScreen>
 #include <QMessageBox>
+#include <QSystemTrayIcon>
 
 #ifdef QT_X11EXTRAS_LIB
 #include <QtX11Extras>
@@ -16,19 +17,33 @@
 
 void fuckoff_low_dpi_screen(const QScreen* screen, QSize native_screen_size)
 {
+	bool can_notify = QSystemTrayIcon::supportsMessages();
+
 	std::cout << "detecting screen ... " << std::endl;
 
 	if (native_screen_size.isValid())
 	{
-		std::cout << "screen resulution: " << native_screen_size.width() << "x" << native_screen_size.height();
+		std::cout << "screen resulution: " << native_screen_size.width() << "x" << native_screen_size.height() << std::endl;
 	}
 
 	if (native_screen_size.isValid() && screen->size()!=native_screen_size)
 	{
 		QString msg = QString("屏幕没有设定到最佳分辨率，最佳分辨率是 %1x%2，请使用最佳分辨率以提高画质").arg(native_screen_size.width()).arg(native_screen_size.height());
-		QMessageBox box;
-		box.setText(msg);
-		box.exec();
+		if (can_notify)
+		{
+			QSystemTrayIcon tray;
+			tray.show();
+			tray.showMessage("注意注意！", msg, QSystemTrayIcon::Warning);
+
+			qApp->processEvents();
+			QThread::sleep(3);
+		}
+		else
+		{
+			QMessageBox box;
+			box.setText(msg);
+			box.exec();
+		}
 	}
 
 	std::cout << "screen DPI = " << screen->physicalDotsPerInch() << " " << [](qreal dpi){
@@ -47,7 +62,7 @@ void fuckoff_low_dpi_screen(const QScreen* screen, QSize native_screen_size)
 		return "stupid DPI settings!";
 	}(screen->logicalDotsPerInch()) << std::endl;
 
-	[](qreal logicaldpi, qreal physicaldpi)
+	[can_notify](qreal logicaldpi, qreal physicaldpi)
 	{
 		if ( logicaldpi < physicaldpi)
 		{
@@ -76,9 +91,18 @@ void fuckoff_low_dpi_screen(const QScreen* screen, QSize native_screen_size)
 				return (int(qRound(phydpi+1))/ 8 + 1) * 8;
 			}(physicaldpi));
 
-			QMessageBox box;
-			box.setText(msg);
-			box.exec();
+			if (can_notify)
+			{
+				QSystemTrayIcon tray;
+				tray.show();
+				tray.showMessage("注意注意！", msg, QSystemTrayIcon::Critical);
+			}
+			else
+			{
+				QMessageBox box;
+				box.setText(msg);
+				box.exec();
+			}
 		}
 	}(screen->logicalDotsPerInch(), screen->physicalDotsPerInch());
 
