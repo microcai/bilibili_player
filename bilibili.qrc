@@ -7,11 +7,13 @@
         <file>bilibili.ico</file>
     </qresource>
     <qresource prefix="/glsl">
+        <file alias="colorblend.frag">src/glsl/colorblend.frag</file>
         <file alias="nv12.frag">src/glsl/nv12.frag</file>
         <file alias="yuv420.frag">src/glsl/yuv420.frag</file>
         <file alias="yuv444.frag">src/glsl/yuv444.frag</file>
         <file alias="passthru.frag">src/glsl/passthru.frag</file>
         <file alias="videowindow.vert">src/glsl/videowindow.vert</file>
+        <file alias="passthru.vert">src/glsl/passthru.vert</file>
         <file alias="yuv2rgb.glsl">src/glsl/yuv2rgb.frag</file>
     </qresource>
 </RCC>

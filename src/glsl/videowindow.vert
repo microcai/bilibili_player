@@ -10,13 +10,11 @@ uniform mat4 ModelViewMatrix;
 uniform mat4 ProjectionMatrix;
 uniform mat4 ModelViewProjectionMatrix;
 
-uniform highp mat4 ViewProjectMatrix;
 uniform mediump vec2 texture_size;
 uniform mediump vec2 video_window_size;
 
 attribute highp vec4 attrVertex;
 // varying vec4 gl_TexCoord[0];
-
 
 varying highp vec2 vary_tex_cord;
 

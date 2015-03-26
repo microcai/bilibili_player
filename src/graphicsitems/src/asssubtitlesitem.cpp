@@ -6,7 +6,17 @@ extern "C" {
 #include <QPainter>
 #include <QRectF>
 #include <QBitmap>
+#include <QPaintEngine>
+#include <QWindow>
+#include <QOpenGLFunctions>
+#include <QOpenGLTexture>
+#include <QOpenGLShaderProgram>
+#include <QOpenGLShader>
+#include <QOpenGLPixelTransferOptions>
 
+#include <QDebug>
+#include <QTimer>
+#include <QWidget>
 
 class AssSubtitlesItemPrivate
 {
@@ -30,6 +40,8 @@ private:
 	ASS_Track* _ass_track;
     ASS_Renderer* _ass_render;
     ASS_Image* _ass_frame = nullptr;
+
+	QScopedPointer<QOpenGLShaderProgram> m_shader;
 };
 
 void AssSubtitlesItemPrivate::ass_setup()
@@ -126,9 +138,6 @@ void AssSubtitlesItem::update_play_position(qulonglong pos)
 	}
 }
 
-#include <QDebug>
-#include <QTimer>
-
 QPainterPath AssSubtitlesItem::shape() const
 {
     QPainterPath path;
@@ -136,11 +145,117 @@ QPainterPath AssSubtitlesItem::shape() const
     return path;
 }
 
+void AssSubtitlesItem::paintGL(QPainter * painter)
+{
+	Q_D(AssSubtitlesItem);
+	if (!d->_ass_frame)
+		return;
+
+	QSize s = unified_rect.size().toSize();
+
+	if (!d->m_shader)
+	{
+		d->m_shader.reset(new QOpenGLShaderProgram);
+
+		d->m_shader->addShaderFromSourceFile(QOpenGLShader::Vertex, ":/glsl/passthru.vert");
+
+		d->m_shader->addShaderFromSourceFile(QOpenGLShader::Fragment, ":/glsl/colorblend.frag");
+
+		d->m_shader->bindAttributeLocation("attrVertex", 0);
+		d->m_shader->bindAttributeLocation("attri_cord", 1);
+		d->m_shader->link();
+	}
+
+	QOpenGLFunctions gl;
+	gl.initializeOpenGLFunctions();
+
+	d->m_shader->bind();
+
+// 	glOrtho(0, s.width(), s.height(), 0, -1 , 1);
+// 	gl.glViewport(0,0, s.width(), s.height());
+
+	ASS_Image* _frame = d->_ass_frame;
+
+	_frame = d->_ass_frame;
+
+	gl.glEnable (GL_BLEND);
+	glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	do{
+
+		QSize frame_size(_frame->w, _frame->h);
+
+		GLdouble tex_cord_array[] =
+		{
+			0,0,
+			1,0,
+			1,1,
+			0,1
+		};
+
+		GLdouble v_array[] =
+		{
+			_frame->dst_x /*- unified_rect.x()*/,			 	_frame->dst_y/* - unified_rect.y()*/ ,
+			_frame->dst_x + _frame->w /*- unified_rect.x()*/,	_frame->dst_y /*- unified_rect.y()*/ ,
+			_frame->dst_x + _frame->w /*- unified_rect.x()*/,	_frame->dst_y + _frame->h/* - unified_rect.y()*/ ,
+			_frame->dst_x  /*unified_rect.x()*/,				_frame->dst_y + _frame->h /*- unified_rect.y()*/ ,
+		};
+
+		QOpenGLTexture _texture(QOpenGLTexture::Target2D);
+
+		_texture.setSize(_frame->w, _frame->h);
+
+		_texture.setFormat(QOpenGLTexture::R8_SNorm);
+
+		_texture.allocateStorage();
+
+		gl.glPixelStorei(GL_UNPACK_ROW_LENGTH, _frame->stride);
+		_texture.setData(QOpenGLTexture::Red, QOpenGLTexture::QOpenGLTexture::UInt8, (const void*) _frame->bitmap);
+		gl.glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+
+		// 好了，绘制
+		float B =  ( (_frame->color & 0xFF00) >> 8) / 255.0;
+		float G =  ( (_frame->color & 0xFF0000) >> 16) / 255.0;;
+		float R =  ( (_frame->color & 0xFF000000) >> 24) / 255.0;;
+
+		_texture.bind(0);
+
+		d->m_shader->setUniformValue("tex0", 0u);
+
+		QVector4D color;
+		color.setX(R);
+		color.setY(G);
+		color.setZ(B);
+
+		d->m_shader->setUniformValue("color", color);
+ 		gl.glEnableVertexAttribArray(0);
+		gl.glEnableVertexAttribArray(1);
+		gl.glVertexAttribPointer(0, 2, GL_DOUBLE, GL_FALSE, 0, &v_array[0]);
+		gl.glVertexAttribPointer(1, 2, GL_DOUBLE, GL_FALSE, 0, &tex_cord_array[0]);
+ 		gl.glDrawArrays(GL_POLYGON, 0, 4);
+ 		gl.glDisableVertexAttribArray(0);
+		gl.glDisableVertexAttribArray(1);
+		_texture.release();
+
+	}while(_frame = _frame->next);
+
+	d->m_shader->release();
+}
+
+
 void AssSubtitlesItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget)
 {
 	Q_D(AssSubtitlesItem);
 	if (!d->_ass_frame)
 		return;
+
+	if (QOpenGLContext::currentContext())
+	{
+		painter->beginNativePainting();
+		paintGL(painter);
+		painter->endNativePainting();
+		return;
+	}
 
 	ASS_Image* _frame = d->_ass_frame;
 

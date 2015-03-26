@@ -191,7 +191,7 @@ void BPlayer::start_play()
 
 		QSurfaceFormat format;
 
-		format.setProfile(QSurfaceFormat::CoreProfile);
+		format.setProfile(QSurfaceFormat::CompatibilityProfile);
 		format.setRenderableType(QSurfaceFormat::OpenGL);
 		format.setOption(QSurfaceFormat::DeprecatedFunctions);
 
@@ -235,13 +235,13 @@ void BPlayer::start_play()
 		m_ass_item.reset(new AssSubtitlesItem(asspath));
 	}
 
-	auto effect =  new QGraphicsDropShadowEffect();
-	effect->setOffset(3);
-	effect->setBlurRadius(5);
-	effect->setEnabled(1);
-	effect->setColor(QColor::fromRgb(0,0,0));
+// 	auto effect =  new QGraphicsDropShadowEffect();
+// 	effect->setOffset(3);
+// 	effect->setBlurRadius(5);
+// 	effect->setEnabled(1);
+// 	effect->setColor(QColor::fromRgb(0,0,0));
 
-	m_ass_item->setGraphicsEffect(effect);
+// 	m_ass_item->setGraphicsEffect(effect);
 
 	scene->addItem(m_ass_item.data());
 

@@ -21,10 +21,11 @@ public:
 
 	void update_video_size(QSizeF);
 
+	void paintGL(QPainter* painter);
+
 private:
 	QRectF unified_rect;
 	QImage m_texture;
-
 	class AssSubtitlesItemPrivate* const d_ptr;
 	Q_DECLARE_PRIVATE(AssSubtitlesItem)
 };
