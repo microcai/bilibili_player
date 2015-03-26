@@ -27,6 +27,8 @@ QRectF GraphicsSvgItem::boundingRect() const
 
 void GraphicsSvgItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget)
 {
+	painter->save();
+
 	// 移动后 paint !
 	auto br = QGraphicsSvgItem::boundingRect();
 
@@ -37,5 +39,7 @@ void GraphicsSvgItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* o
 	painter->setTransform(move_centor, true);
 
 	QGraphicsSvgItem::paint(painter, option, widget);
+
+	painter->restore();
 }
 

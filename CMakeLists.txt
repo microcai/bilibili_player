@@ -33,8 +33,6 @@ find_package(KF5WindowSystem)
 include_directories(${OPENSSL_INCLUDE_DIR})
 include_directories(${BULLET_INCLUDE_DIRS})
 
-include_directories(${LIBASS_INCLUDE_DIRS})
-
 add_definitions     ( ${BULLET_DEFINITIONS} )
 link_directories    ( ${BULLET_LIBRARY_DIRS} )
 

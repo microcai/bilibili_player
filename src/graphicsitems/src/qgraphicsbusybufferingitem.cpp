@@ -52,6 +52,7 @@ QRectF QGraphicsBusybufferingItem::boundingRect() const
 
 void QGraphicsBusybufferingItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget)
 {
+	painter->save();
 	// 考虑dip
 	qreal dpiX = 72;
 	qreal dpiY = 72;
@@ -100,4 +101,5 @@ void QGraphicsBusybufferingItem::paint(QPainter* painter, const QStyleOptionGrap
 		painter->setTransform(old_transform);
 
 	}
+	painter->restore();
 }

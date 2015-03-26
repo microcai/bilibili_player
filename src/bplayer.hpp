@@ -26,7 +26,10 @@
 #include "qgraphicsbusybufferingitem.hpp"
 #include "graphicssvgitem.hpp"
 
+#include "compositionsuspender.hpp"
 #include "screensaverinhibitor.hpp"
+#include "asssubtitlesitem.hpp"
+
 #include "defs.hpp"
 #include "danmumanager.hpp"
 
@@ -39,6 +42,7 @@ class BPlayer : public QObject
 	Q_PROPERTY(QString VideoAspect MEMBER  VideoAspect)
     Q_PROPERTY(double ZoomLevel READ ZoomLevel WRITE SetZoomLevel NOTIFY ZoomLevelChanged)
     Q_PROPERTY(double full_screen READ full_screen_mode WRITE set_full_screen_mode NOTIFY full_screen_mode_changed)
+    Q_PROPERTY(QString asspath MEMBER asspath )
 
 public:
 	BPlayer(QObject * parent = nullptr);
@@ -141,10 +145,14 @@ private:
 	int _drag_positoin = -1;
 
 	QScopedPointer<ScreenSaverInhibitor> m_screesave_inhibitor;
+	QScopedPointer<CompositionSuspender> m_CompositionSuspender;
+
+	QScopedPointer<AssSubtitlesItem> m_ass_item;
 
 	DanmuManager m_danmumgr;
 	bool use_bullet = false;
 	bool use_gl = true;
 	QString VideoAspect = "auto";
 	bool allow_any_resize = false;
+	QString asspath;
 };

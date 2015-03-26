@@ -15,7 +15,7 @@
 #include "bplayer.hpp"
 #include "bilibilires.hpp"
 
-void fuckoff_low_dpi_screen(const QScreen* screen, QSize native_screen_size)
+static void fuckoff_low_dpi_screen(const QScreen* screen, QSize native_screen_size)
 {
 	bool can_notify = QSystemTrayIcon::supportsMessages();
 
@@ -136,6 +136,7 @@ int main(int argc, char* argv[])
 	cliparser.addOption({"nogl", "do not using opengl to render the video and danmaku"});
 	cliparser.addOption({"no-minimalsize", "allow resize freely"});
 	cliparser.addOption({"force-aspect", "force video aspect", "16:9"});
+	cliparser.addOption({"ass", "load ass file", "file"});
 
 	cliparser.process(app);
 
@@ -194,6 +195,11 @@ int main(int argc, char* argv[])
 	if (cliparser.isSet("no-minimalsize"))
 	{
 		player.setProperty("AllowAnySize", (cliparser.value("no-minimalsize") != "no"));
+	}
+
+	if (cliparser.isSet("ass"))
+	{
+		player.setProperty("asspath", cliparser.value("ass"));
 	}
 
 	auto bilibili_res = new BiliBiliRes(bilibili_url.toStdString());

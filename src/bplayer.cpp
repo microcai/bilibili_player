@@ -28,10 +28,6 @@
 #include <QSurfaceFormat>
 #include <QResizeEvent>
 
-#ifdef HAVE_KF5_WINDOWSYSTEM
-#include <KWindowSystem>
-#endif
-
 #include <boost/regex.hpp>
 
 #include "bplayer.hpp"
@@ -159,11 +155,11 @@ void BPlayer::start_play()
 		exit(1);
 	// now start playing!
 	m_mainwindow = new MyMainWindow;
+	scene = new QGraphicsScene(m_mainwindow);
 
 	if (allow_any_resize)
 		m_mainwindow->setMinimumSize(1,1);
 
-	scene = new QGraphicsScene(m_mainwindow);
 	graphicsView = new QGraphicsView(scene);
 
 	graphicsView->setFocusPolicy(Qt::NoFocus);
@@ -212,6 +208,8 @@ void BPlayer::start_play()
 		video_surface->setSize(QSizeF(640, 480));
 		scene->addItem(video_surface);
 
+		video_surface->setZValue(-10);
+
 		vplayer->setVideoOutput(video_surface);
 	}else
 	{
@@ -220,20 +218,33 @@ void BPlayer::start_play()
 		scene->addItem(videoItem);
 
 		vplayer->setVideoOutput(videoItem);
+		videoItem->setZValue(-10);
 	}
 
 	position_slide = new QSlider;
 
 	position_slide->setOrientation(Qt::Horizontal);
 
-
 	scene->addWidget(position_slide);
 
 
+	if (asspath.isEmpty())
+		m_ass_item.reset(new AssSubtitlesItem);
+	else
+	{
+		m_ass_item.reset(new AssSubtitlesItem(asspath));
+	}
+
+	auto ass_effect =  new QGraphicsDropShadowEffect();
+	ass_effect->setOffset(3);
+	ass_effect->setBlurRadius(5);
+	ass_effect->setEnabled(1);
+	ass_effect->setColor(QColor::fromRgb(0,0,0));
+	m_ass_item->setGraphicsEffect(ass_effect);
+	scene->addItem(m_ass_item.data());
+
 	vplayer->setPlaylist(play_list);
 	m_mainwindow->show();
-
-	//vplayer->show();
 
 	QTimer::singleShot(2000, vplayer, SLOT(play()));
 
@@ -343,7 +354,6 @@ void BPlayer::add_barrage(const Moving_Comment& c)
 	effect->setColor(QColor::fromRgb(0,0,0));
 
 	QGraphicsTextItem * danmu = scene->addText(QString::fromStdString(c.content));
-
 
 	danmu->setFont(font);
 	danmu->setDefaultTextColor(c.font_color);
@@ -484,7 +494,10 @@ void BPlayer::positionChanged(qint64 position)
 {
 	quint64 real_pos = map_position_from_media(position);
 	if (_drag_positoin == -1)
+	{
 		position_slide->setValue(real_pos);
+		m_ass_item->update_play_position(position);
+	}
 
 	// 更改 tooltip
 
@@ -567,6 +580,15 @@ void BPlayer::adjust_window_size(QSizeF video_widget_size)
 		pause_indicator->setPos(scene->sceneRect().center());
 	if (play_indicator)
 		play_indicator->setPos(scene->sceneRect().center());
+
+// 	m_ass_item->setPos(scene->sceneRect().center());
+
+	m_ass_item->update_video_size(video_widget_size);
+
+// 	m_ass_item->setScale(zoom_level);
+// // // 	m_ass_item->show();
+// 	m_ass_item->update();
+
 	m_danmumgr.video_width = video_size.width();
 }
 
@@ -619,9 +641,8 @@ void BPlayer::set_full_screen_mode(bool v)
 
 void BPlayer::slot_full_screen_mode_changed(bool)
 {
-#ifdef HAVE_KF5_WINDOWSYSTEM
-	KWindowSystem::setBlockingCompositing(m_mainwindow->winId(), m_mainwindow->isFullScreen());
-#endif
+	m_CompositionSuspender.reset();
+	m_CompositionSuspender.reset(new CompositionSuspender(m_mainwindow));
 
 	if (m_mainwindow->isFullScreen())
 	{
