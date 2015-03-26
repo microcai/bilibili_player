@@ -20,6 +20,9 @@ PS： 如果使用 4k 屏幕，你还是使用本播放器吧。。。flash根�
 
 bilibili_player 依赖 Qt5Widgets Qt5Multimedia Qt5Network Qt5Xml 以及开源物理引擎 [bullet](https://github.com/bulletphysics/bullet3)
 
+还有 libXrandr 实现屏幕检测
+还有 libass 以支持字幕
+
 ### OpenGL 注意事项
 
 bilibili_player 使用 OpenGL 硬件加速绘制视频和弹幕。确保您的显卡支持 OpenGL >= 3.0。通常来说近十年内生产的显卡都支持。

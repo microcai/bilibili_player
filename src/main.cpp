@@ -69,7 +69,7 @@ static void fuckoff_low_dpi_screen(const QScreen* screen, QSize native_screen_si
 			std::cout << "you idiot! stupid dumb! Go fuck you self, have't you see the font tooo small for you?" << std::endl;
 
 			QString msg = QString("你的屏幕实际 DPI 为 %1, 但是系统才设置 %2 的 DPI, 难道你不觉得字体很小看着不舒服么？\n"
-			"赶紧打开系统设置，将 DPI 设置的比屏幕 DPI 大点！建议你设置为 %3").arg(physicaldpi).arg(logicaldpi)
+			"赶紧打开系统设置，将 DPI 设置的比屏幕 DPI 大点！建议设置为 %3").arg(physicaldpi).arg(logicaldpi)
 			.arg([](qreal phydpi){
 				if ( phydpi < 96)
 					return 96;
