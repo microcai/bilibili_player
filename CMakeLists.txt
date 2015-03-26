@@ -20,18 +20,25 @@ find_package(Qt5MultimediaWidgets REQUIRED)
 find_package(Qt5DBus REQUIRED)
 find_package(Qt5Svg REQUIRED)
 find_package(Boost 1.55 COMPONENTS regex thread REQUIRED)
+find_package(PkgConfig REQUIRED)
+
+find_package(Qt5X11Extras REQUIRED)
 
 find_package(Bullet REQUIRED)
+
+pkg_check_modules(LIBASS REQUIRED libass)
 
 find_package(KF5WindowSystem)
 
 include_directories(${OPENSSL_INCLUDE_DIR})
 include_directories(${BULLET_INCLUDE_DIRS})
 
+include_directories(${LIBASS_INCLUDE_DIRS})
+
 add_definitions     ( ${BULLET_DEFINITIONS} )
 link_directories    ( ${BULLET_LIBRARY_DIRS} )
 
-link_libraries(${OPENSSL_LIBRARIES} ${Boost_LIBRARIES} GL)
+link_libraries(${OPENSSL_LIBRARIES} ${Boost_LIBRARIES} ${LIBASS_LDFLAGS} ${LIBASS_LIBRARIES})
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 

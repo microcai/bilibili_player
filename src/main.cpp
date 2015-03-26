@@ -5,50 +5,86 @@
 #include <QScreen>
 #include <QMessageBox>
 
+#ifdef QT_X11EXTRAS_LIB
+#include <QtX11Extras>
+#include <QX11Info>
+#include "xrandr/xrandr.hpp"
+#endif
+
 #include "bplayer.hpp"
 #include "bilibilires.hpp"
 
-void fuckoff_low_dpi_screen(const QScreen* screen)
+void fuckoff_low_dpi_screen(const QScreen* screen, QSize native_screen_size)
 {
-	std::cout << "screen DPI = " << screen->physicalDotsPerInch() << std::endl;
-	std::cout << "screen Logical DPI = " << screen->logicalDotsPerInch() << std::endl;
+	std::cout << "detecting screen ... " << std::endl;
 
-	if ( screen->logicalDotsPerInch() < screen->physicalDotsPerInch())
+	if (native_screen_size.isValid())
 	{
-		std::cout << "you idiot! stupid dumb! Go fuck you self, have't you see the font tooo small for you?" << std::endl;
+		std::cout << "screen resulution: " << native_screen_size.width() << "x" << native_screen_size.height();
+	}
 
-		QString msg = QString("你的屏幕实际 DPI 为 %1, 但是系统才设置 %2 的 DPI, 难道你不觉得字体很小看着不舒服么？\n"
-		"赶紧打开系统设置，将 DPI 设置的比屏幕 DPI 大点！建议你设置为 %3").arg(screen->physicalDotsPerInch()).arg(screen->logicalDotsPerInch())
-		.arg([](qreal phydpi){
-			if ( phydpi < 96)
-				return 96;
-			if ( phydpi < 115)
-				return 120;
-			if  (phydpi < 130)
-				return 144;
-			if (phydpi <= 182)
-				return 192;
-			if (phydpi <= 230)
-				return 240;
-			if(phydpi <= 260)
-				return 288;
-			if (phydpi < 330)
-				return 384;
-			if (phydpi < 500)
-				return 576;
-
-			return (int(qRound(phydpi+1))/ 8 + 1) * 8;
-		}(screen->physicalDotsPerInch()));
-
+	if (native_screen_size.isValid() && screen->size()!=native_screen_size)
+	{
+		QString msg = QString("屏幕没有设定到最佳分辨率，最佳分辨率是 %1x%2，请使用最佳分辨率以提高画质").arg(native_screen_size.width()).arg(native_screen_size.height());
 		QMessageBox box;
 		box.setText(msg);
 		box.exec();
 	}
 
+	std::cout << "screen DPI = " << screen->physicalDotsPerInch() << " " << [](qreal dpi){
+		if ( dpi < 90)
+		 return "bad screen :(";
+		if ( dpi > 100 && dpi < 150)
+			return "good!";
+		return "you got a nice screen!";
+	}(screen->physicalDotsPerInch()) << std::endl;
+
+	std::cout << "screen Logical DPI = " << screen->logicalDotsPerInch() << " " << [](qreal dpi){
+		if ( dpi >= 192)
+		{
+			return "you're smart guy!";
+		}
+		return "stupid DPI settings!";
+	}(screen->logicalDotsPerInch()) << std::endl;
+
+	[](qreal logicaldpi, qreal physicaldpi)
+	{
+		if ( logicaldpi < physicaldpi)
+		{
+			std::cout << "you idiot! stupid dumb! Go fuck you self, have't you see the font tooo small for you?" << std::endl;
+
+			QString msg = QString("你的屏幕实际 DPI 为 %1, 但是系统才设置 %2 的 DPI, 难道你不觉得字体很小看着不舒服么？\n"
+			"赶紧打开系统设置，将 DPI 设置的比屏幕 DPI 大点！建议你设置为 %3").arg(physicaldpi).arg(logicaldpi)
+			.arg([](qreal phydpi){
+				if ( phydpi < 96)
+					return 96;
+				if ( phydpi < 115)
+					return 120;
+				if  (phydpi < 130)
+					return 144;
+				if (phydpi <= 182)
+					return 192;
+				if (phydpi <= 230)
+					return 240;
+				if(phydpi <= 260)
+					return 288;
+				if (phydpi < 330)
+					return 384;
+				if (phydpi < 500)
+					return 576;
+
+				return (int(qRound(phydpi+1))/ 8 + 1) * 8;
+			}(physicaldpi));
+
+			QMessageBox box;
+			box.setText(msg);
+			box.exec();
+		}
+	}(screen->logicalDotsPerInch(), screen->physicalDotsPerInch());
+
 	if( screen->devicePixelRatio() != 1.0)
 	{
 		std::cout << "do not set devicePixelRatio, you idiot" << std::endl;
-// 		std::exit(1);
 	}
 }
 
@@ -72,13 +108,24 @@ int main(int argc, char* argv[])
 
 	cliparser.addOption({"use-bullet", "use bullet engine to manage danmaku"});
 	cliparser.addOption({"videourl", "alternative video url, useful for play local video file while still  be able to see danmaku", "uri"});
+	cliparser.addOption({"ass", "load subtitle from this ass", "path"});
 	cliparser.addOption({"nogl", "do not using opengl to render the video and danmaku"});
 	cliparser.addOption({"no-minimalsize", "allow resize freely"});
 	cliparser.addOption({"force-aspect", "force video aspect", "16:9"});
 
 	cliparser.process(app);
 
-	fuckoff_low_dpi_screen(app.primaryScreen());
+	QSize native_screen_size;
+#ifdef QT_X11EXTRAS_LIB
+	if (QX11Info::isPlatformX11())
+	{
+		// 加入 xrandr 检查是否使用了最佳分辨率.
+		native_screen_size = native_res_for_monitior();
+	}
+#endif
+
+
+	fuckoff_low_dpi_screen(app.primaryScreen(), native_screen_size);
 
 	if (cliparser.isSet("about-qt"))
 	{

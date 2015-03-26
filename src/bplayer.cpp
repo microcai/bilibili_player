@@ -194,16 +194,17 @@ void BPlayer::start_play()
 		auto glwidget = new QOpenGLWidget(m_mainwindow);
 
 		QSurfaceFormat format;
+
 		format.setProfile(QSurfaceFormat::CoreProfile);
-
-// 		format.setRenderableType(QSurfaceFormat::OpenGLES);
-
 		format.setRenderableType(QSurfaceFormat::OpenGL);
 		format.setOption(QSurfaceFormat::DeprecatedFunctions);
 
 		format.setVersion(3,0);
 
+		format.setSamples(0);
+
 		format.setSwapBehavior(QSurfaceFormat::SingleBuffer);
+		QSurfaceFormat::setDefaultFormat(format);
 
 		glwidget->setFormat(format);
 
