@@ -171,15 +171,12 @@ void AssSubtitlesItem::paintGL(QPainter * painter)
 
 	d->m_shader->bind();
 
-// 	glOrtho(0, s.width(), s.height(), 0, -1 , 1);
-// 	gl.glViewport(0,0, s.width(), s.height());
-
 	ASS_Image* _frame = d->_ass_frame;
 
 	_frame = d->_ass_frame;
 
 	gl.glEnable (GL_BLEND);
-	glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	gl.glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	do{
 
