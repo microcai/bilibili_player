@@ -235,12 +235,14 @@ void BPlayer::start_play()
 		m_ass_item.reset(new AssSubtitlesItem(asspath));
 	}
 
-	auto ass_effect =  new QGraphicsDropShadowEffect();
-	ass_effect->setOffset(3);
-	ass_effect->setBlurRadius(5);
-	ass_effect->setEnabled(1);
-	ass_effect->setColor(QColor::fromRgb(0,0,0));
-	m_ass_item->setGraphicsEffect(ass_effect);
+	auto effect =  new QGraphicsDropShadowEffect();
+	effect->setOffset(3);
+	effect->setBlurRadius(5);
+	effect->setEnabled(1);
+	effect->setColor(QColor::fromRgb(0,0,0));
+
+	m_ass_item->setGraphicsEffect(effect);
+
 	scene->addItem(m_ass_item.data());
 
 	vplayer->setPlaylist(play_list);

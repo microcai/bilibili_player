@@ -41,7 +41,6 @@ void AssSubtitlesItemPrivate::ass_setup()
     ass_set_fonts(_ass_render, NULL, "Sans", 1, NULL, 1);
 }
 
-
 AssSubtitlesItemPrivate::AssSubtitlesItemPrivate(AssSubtitlesItem* q)
 	: q_ptr(q)
 {
@@ -49,7 +48,6 @@ AssSubtitlesItemPrivate::AssSubtitlesItemPrivate(AssSubtitlesItem* q)
 	_ass_track = ass_new_track(_ass_library);
 	_next_pos = ass_step_sub(_ass_track, _current_pos, 0);
 }
-
 
 AssSubtitlesItemPrivate::AssSubtitlesItemPrivate(QString filename, AssSubtitlesItem* q)
 	: q_ptr(q)
@@ -74,7 +72,6 @@ AssSubtitlesItem::AssSubtitlesItem(QGraphicsItem* parent)
 {
 
 }
-
 
 AssSubtitlesItem::AssSubtitlesItem(QString filename, QGraphicsItem* parent)
 	: QGraphicsObject(parent)
@@ -150,36 +147,30 @@ void AssSubtitlesItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* 
 	_frame = d->_ass_frame;
 
 	do{
-
 		// 开始渲染到 QImage 里
 		QSize s(_frame->w, _frame->w);
 
-// 		QBitmap bmp = QBitmap::fromData(s, _frame->bitmap);
-
 		QImage img(_frame->bitmap, _frame->w, _frame->h, _frame->stride, QImage::Format_Indexed8);
 
-		QVector<QRgb> ctable;
+		QVector<QRgb> ctable(256);
 
 		ctable.reserve(256);
 
-		qreal alpha =  QColor::fromRgba(_frame->color).alphaF();
+		float A = (255 - (_frame->color & 0xff)) / 255.0;
+		float B =  ( (_frame->color & 0xFF00) >> 8);
+		float G =  ( (_frame->color & 0xFF0000) >> 16);
+		float R =  ( (_frame->color & 0xFF000000) >> 24);
 
-		for(int i=0; i< 256; i++)
+		for(int i=0; i<256; i++)
 		{
-			ctable.push_back(qRgba(i*alpha,i*alpha,i*alpha, i*alpha));
+ 			ctable[i] = qRgba(R, G, B, i*A );
 		}
 
 		img.setColorTable(ctable);
 
-// 		img.fill(QColor(QRgb(_frame->color)));
-
-// 		img.setMask(bmp);
-
 		painter->drawImage(QPointF(_frame->dst_x, _frame->dst_y), img);
 
 	}while(_frame = _frame->next);
-
-
 }
 
 QRectF AssSubtitlesItem::boundingRect() const
