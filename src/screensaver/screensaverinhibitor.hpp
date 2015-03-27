@@ -5,6 +5,8 @@
 #include <string>
 #include <cstdint>
 
+#ifdef QT_DBUS_LIB
+
 class ScreenSaverInhibitor
 {
 	ScreenSaverInhibitor(const ScreenSaverInhibitor&) = delete;
@@ -18,3 +20,10 @@ private:
 	uint32_t m_cookie = 0;
 };
 
+#else
+class ScreenSaverInhibitor
+{
+public:
+	ScreenSaverInhibitor(const std::string& appname, const std::string& reason){}
+};
+#endif
