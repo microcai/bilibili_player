@@ -1,10 +1,19 @@
 cmake_minimum_required(VERSION 3.1)
-set(CMAKE_CXX_STANDARD 11)
 
 project(bilibili)
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+include(CheckCXXCompilerFlag)
 
+if (NOT MSVC)
+CHECK_CXX_COMPILER_FLAG(-std=c++11 LIBCXX_HAS_STDCXX11_FLAG)
+if(LIBCXX_HAS_STDCXX11_FLAG)
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+else()
+	message(FATAL "need at least gcc 4.8 or clang 3.4")
+endif()
+endif(NOT MSVC)
+
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
 add_definitions(-DMODULE_STRING="bilibili" -DMODULE_NAME=bilibili)
 
