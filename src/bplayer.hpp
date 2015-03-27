@@ -27,7 +27,7 @@
 #include "graphicssvgitem.hpp"
 
 #include "compositionsuspender.hpp"
-#include "screensaverinhibitor.hpp"
+#include "screensaver/screensaverinhibitor.hpp"
 #include "asssubtitlesitem.hpp"
 
 #include "defs.hpp"

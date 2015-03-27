@@ -17,9 +17,10 @@ find_package(Qt5Xml REQUIRED)
 find_package(Threads REQUIRED)
 find_package(Qt5Multimedia REQUIRED)
 find_package(Qt5MultimediaWidgets REQUIRED)
-find_package(Qt5DBus REQUIRED)
 find_package(Qt5Svg REQUIRED)
 find_package(Boost 1.55 COMPONENTS regex thread REQUIRED)
+find_package(Qt5DBus)
+
 find_package(PkgConfig REQUIRED)
 
 find_package(Qt5X11Extras REQUIRED)
