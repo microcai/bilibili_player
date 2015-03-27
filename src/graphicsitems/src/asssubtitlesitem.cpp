@@ -192,10 +192,10 @@ void AssSubtitlesItem::paintGL(QPainter * painter)
 
 		GLdouble v_array[] =
 		{
-			_frame->dst_x /*- unified_rect.x()*/,			 	_frame->dst_y/* - unified_rect.y()*/ ,
-			_frame->dst_x + _frame->w /*- unified_rect.x()*/,	_frame->dst_y /*- unified_rect.y()*/ ,
-			_frame->dst_x + _frame->w /*- unified_rect.x()*/,	_frame->dst_y + _frame->h/* - unified_rect.y()*/ ,
-			_frame->dst_x  /*unified_rect.x()*/,				_frame->dst_y + _frame->h /*- unified_rect.y()*/ ,
+			(double)_frame->dst_x /*- unified_rect.x()*/,			 	(double)_frame->dst_y/* - unified_rect.y()*/ ,
+			(double)_frame->dst_x + _frame->w /*- unified_rect.x()*/,	(double)_frame->dst_y /*- unified_rect.y()*/ ,
+			(double)_frame->dst_x + _frame->w /*- unified_rect.x()*/,	(double)_frame->dst_y + _frame->h/* - unified_rect.y()*/ ,
+			(double)_frame->dst_x  /*unified_rect.x()*/,				(double)_frame->dst_y + _frame->h /*- unified_rect.y()*/ ,
 		};
 
 		QOpenGLTexture _texture(QOpenGLTexture::Target2D);
