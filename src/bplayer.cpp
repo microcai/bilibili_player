@@ -345,9 +345,7 @@ void BPlayer::add_barrage(const Moving_Comment& c)
 	font.setPointSizeF(c.font_size /1.5);
 	font.setFamily("Sans");
 
-	auto vsize = video_size;
-	if (!qIsNaN(zoom_level))
-		vsize = video_size * zoom_level;
+	auto vsize = scene->sceneRect().size();
 
 	auto effect =  new QGraphicsDropShadowEffect();
 	effect->setOffset(3);

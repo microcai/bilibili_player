@@ -27,6 +27,15 @@ find_package(Qt5X11Extras)
 
 find_package(Bullet REQUIRED)
 
+
+set(BOX2D_INSTALL OFF)
+set(BOX2D_INSTALL_DOC "Install Box2D documentation" OFF)
+set(BOX2D_BUILD_SHARED "Build Box2D shared libraries" OFF)
+set(BOX2D_BUILD_STATIC "Build Box2D static libraries" ON)
+set(BOX2D_BUILD_EXAMPLES "Build Box2D examples" OFF)
+
+add_subdirectory(third_party/Box2D/Box2D EXCLUDE_FROM_ALL)
+
 pkg_check_modules(LIBASS REQUIRED libass)
 
 find_package(KF5WindowSystem)
