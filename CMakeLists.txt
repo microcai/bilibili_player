@@ -19,29 +19,24 @@ add_definitions(-DMODULE_STRING="bilibili" -DMODULE_NAME=bilibili)
 
 add_definitions(-D_FILE_OFFSET_BITS=64 -D_REENTRANT -D_THREAD_SAFE)
 
-find_package(OpenSSL REQUIRED)
-find_package(Qt5Widgets REQUIRED)
-find_package(Qt5Network REQUIRED)
-find_package(Qt5Xml REQUIRED)
+find_package(PkgConfig REQUIRED)
 find_package(Threads REQUIRED)
-find_package(Qt5Multimedia REQUIRED)
-find_package(Qt5MultimediaWidgets REQUIRED)
-find_package(Qt5Svg REQUIRED)
+
+find_package(Qt5 5.4 REQUIRED COMPONENTS Core Xml Svg Widgets Network Multimedia MultimediaWidgets)
+
+find_package(OpenSSL REQUIRED)
 find_package(Boost 1.55 COMPONENTS regex thread REQUIRED)
 find_package(Qt5DBus)
-
-find_package(PkgConfig REQUIRED)
 
 find_package(Qt5X11Extras)
 
 find_package(Bullet REQUIRED)
 
-
 set(BOX2D_INSTALL OFF)
-set(BOX2D_INSTALL_DOC "Install Box2D documentation" OFF)
-set(BOX2D_BUILD_SHARED "Build Box2D shared libraries" OFF)
-set(BOX2D_BUILD_STATIC "Build Box2D static libraries" ON)
-set(BOX2D_BUILD_EXAMPLES "Build Box2D examples" OFF)
+set(BOX2D_INSTALL_DOC OFF)
+set(BOX2D_BUILD_SHARED  OFF)
+set(BOX2D_BUILD_STATIC ON)
+set(BOX2D_BUILD_EXAMPLES OFF)
 
 add_subdirectory(third_party/Box2D/Box2D EXCLUDE_FROM_ALL)
 
