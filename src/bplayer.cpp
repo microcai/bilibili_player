@@ -27,6 +27,7 @@
 #include <QGraphicsVideoItem>
 #include <QSurfaceFormat>
 #include <QResizeEvent>
+#include <QOpenGLFunctions>
 
 #include <boost/regex.hpp>
 
@@ -41,6 +42,25 @@ public:
     explicit MyMainWindow(QWidget *parent = 0, Qt::WindowFlags flags = 0)
 		:QMainWindow(parent, flags)
 	{
+	}
+
+	virtual void paintEvent(QPaintEvent*)
+	{
+		QPainter p(this);
+
+		QOpenGLFunctions gl;
+
+		gl.initializeOpenGLFunctions();
+
+// 		QOpenGLFun
+
+		p.beginNativePainting();
+
+		gl.glClearColor(0,0,0,1);
+
+		gl.glClear(GL_COLOR_BUFFER_BIT);
+
+		p.end();
 	}
 
 	virtual void resizeEvent(QResizeEvent* e)
@@ -176,8 +196,10 @@ void BPlayer::start_play()
 
 	QPalette palette = m_mainwindow->palette();
 	palette.setColor(QPalette::Background, QColor::fromRgb(0,0,0));
+	palette.setColor(QPalette::WindowText, QColor::fromRgb(0,0,0));
 
 	m_mainwindow->setPalette(palette);
+	graphicsView->setBackgroundRole(QPalette::WindowText);
 
 	graphicsView->setFrameShape(QFrame::NoFrame);
 	graphicsView->setFrameShadow(QFrame::Plain);
@@ -327,7 +349,7 @@ void BPlayer::start_play()
 			// 计算 scene 大小
 
 			QSizeF adjnewsize = newsize;
-			adjnewsize.rheight() -= position_slide->height();
+			adjnewsize.rheight() -= position_slide->heightForWidth(adjnewsize.width());
 
 			QSizeF newscence_rect = video_size;
 
