@@ -22,13 +22,10 @@ add_definitions(-D_FILE_OFFSET_BITS=64 -D_REENTRANT -D_THREAD_SAFE)
 find_package(PkgConfig REQUIRED)
 find_package(Threads REQUIRED)
 
-find_package(Qt5 5.4 REQUIRED COMPONENTS Core Xml Svg Widgets Network Multimedia MultimediaWidgets)
+find_package(Qt5 5.4 REQUIRED COMPONENTS Core Xml Svg Widgets Network Multimedia MultimediaWidgets OPTIONAL_COMPONENTS DBus X11Extras)
 
 find_package(OpenSSL REQUIRED)
 find_package(Boost 1.55 COMPONENTS regex thread REQUIRED)
-find_package(Qt5DBus)
-
-find_package(Qt5X11Extras)
 
 find_package(Bullet REQUIRED)
 
