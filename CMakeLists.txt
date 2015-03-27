@@ -23,7 +23,7 @@ find_package(Qt5DBus)
 
 find_package(PkgConfig REQUIRED)
 
-find_package(Qt5X11Extras REQUIRED)
+find_package(Qt5X11Extras)
 
 find_package(Bullet REQUIRED)
 
