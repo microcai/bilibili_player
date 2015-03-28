@@ -11,6 +11,7 @@ if(LIBCXX_HAS_STDCXX11_FLAG)
 else()
 	message(FATAL "need at least gcc 4.8 or clang 3.4")
 endif()
+add_definitions(-stdlib=libc++)
 endif(NOT MSVC)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
@@ -22,7 +23,7 @@ add_definitions(-D_FILE_OFFSET_BITS=64 -D_REENTRANT -D_THREAD_SAFE)
 find_package(PkgConfig REQUIRED)
 find_package(Threads REQUIRED)
 
-find_package(Qt5 5.4 REQUIRED COMPONENTS Core Xml Svg Widgets Network Multimedia MultimediaWidgets OPTIONAL_COMPONENTS DBus X11Extras)
+find_package(Qt5 5.4 REQUIRED COMPONENTS Core Xml Svg Widgets Network Multimedia MultimediaWidgets OPTIONAL_COMPONENTS  )
 
 find_package(OpenSSL REQUIRED)
 find_package(Boost 1.55 COMPONENTS regex thread REQUIRED)

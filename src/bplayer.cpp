@@ -1,6 +1,6 @@
 #include <iostream>
 
-#include <malloc.h>
+// #include <malloc.h>
 
 #include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
@@ -808,7 +808,7 @@ void BPlayer::toogle_play_pause()
 
 			ani_group->start(QAbstractAnimation::DeleteWhenStopped);
 
-			malloc_trim(0);
+			// malloc_trim(0);
 
 			break;
 		}
