@@ -177,7 +177,16 @@ int main(int argc, char* argv[])
 	QMediaPlaylist playlist;
 	playlist.setPlaybackMode(QMediaPlaylist::Sequential);
 
-	BPlayer player((cliparser.value("nogl") != "no"));
+	bool use_gl = true;
+
+	if (cliparser.isSet("nogl"))
+	{
+		use_gl = false;
+		if (cliparser.value("nogl") == "no")
+			use_gl = true;
+	}
+
+	BPlayer player(use_gl);
 	player.set_play_list(&playlist);
 
 	if (cliparser.isSet("use-bullet"))

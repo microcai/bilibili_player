@@ -34,29 +34,33 @@ Player::Player(QWidget* parent, bool use_opengl)
 	setContentsMargins(0,0,0,0);
 	setBackgroundRole(QPalette::WindowText);
 
-
 	m_player.setNotifyInterval(1000/23.976);
 
+	m_scene.setBackgroundBrush(QBrush(QColor(0,0,0,255)));
 
 	if (use_opengl)
 	{
-		m_current_video_item = m_video_item_gl = new VideoItem;
-		m_scene.addItem(m_video_item_gl);
-
 		// 创建 opengl widget
 		auto glwidget = new QOpenGLWidget(this);
 		setViewport(glwidget);
+		m_current_video_item = m_video_item_gl = new VideoItem;
 
 		m_player.setVideoOutput(m_video_item_gl);
 	}
 	else
 	{
 		m_current_video_item = m_video_item_no_gl = new QGraphicsVideoItem;
-		m_scene.addItem(m_video_item_no_gl);
 		m_player.setVideoOutput(m_video_item_no_gl);
 	}
 
-// 	m_current_video_item->setZValue(-999);
+	QPalette Pal(palette());
+	Pal.setColor(QPalette::Background, QColor(0,0,0,255));
+	viewport()->setAutoFillBackground(true);
+	viewport()->setPalette(Pal);
+	viewport()->setBackgroundRole(QPalette::Background);
+
+	// 	m_current_video_item->setZValue(-999);
+	m_scene.addItem(m_current_video_item);
 
 	scene()->addItem(&m_media_buffer_indicator);
 
@@ -68,6 +72,8 @@ Player::Player(QWidget* parent, bool use_opengl)
 
 	connect(&m_player, SIGNAL(stateChanged(QMediaPlayer::State)), this, SLOT(slot_play_state_changed(QMediaPlayer::State)));
 	connect(&m_player, SIGNAL(mediaStatusChanged(QMediaPlayer::MediaStatus)), this, SLOT(slot_mediaStatusChanged(QMediaPlayer::MediaStatus)));
+
+	connect(&m_player, SIGNAL(metaDataChanged(QString,QVariant)), this, SLOT(slot_metaDataChanged(QString,QVariant)));
 
 	connect(&m_player, SIGNAL(positionChanged(qint64)), this, SLOT(slot_positionChanged(qint64)));
 	connect(&m_player, SIGNAL(durationChanged(qint64)), this, SLOT(slot_durationChanged(qint64)));
@@ -87,22 +93,19 @@ void Player::set_subtitle(QString subtitlefile)
 void Player::resizeEvent(QResizeEvent*e)
 {
 	QWidget::resizeEvent(e);
-	QRectF rect(QPointF(), e->size());
-	m_scene.setSceneRect(rect);
+	handle_resize(e->size());
+	resized(e->size());
+}
 
-	QSizeF video_widget_size(16,9);
-// 	QSizeF video_widget_size = e->size();
+void Player::update_video_widget_size(QSizeF rectsize)
+{
+	QSizeF video_widget_size = video_size;
 
-	video_widget_size.scale(rect.size(), Qt::KeepAspectRatio);
-
+	video_widget_size.scale(rectsize, Qt::KeepAspectRatio);
 	QRectF video_rect(QPointF(), video_widget_size);
 
-	video_rect.moveCenter(rect.center());
-	if (m_ass_item)
-	{
-		m_ass_item->update_video_size(video_widget_size);
-		m_ass_item->setPos(video_rect.topLeft());
-	}
+
+	video_rect.moveCenter(scene()->sceneRect().center());
 
 	// 调整视频大小
 	if(m_video_item_gl)
@@ -115,6 +118,22 @@ void Player::resizeEvent(QResizeEvent*e)
 	}
 
 	m_current_video_item->setPos(video_rect.topLeft());
+
+
+	if (m_ass_item)
+	{
+		m_ass_item->update_video_size(video_widget_size);
+		m_ass_item->setPos(video_rect.topLeft());
+	}
+
+}
+
+void Player::handle_resize(QSizeF s)
+{
+	QRectF rect(QPointF(), s);
+	m_scene.setSceneRect(rect);
+
+	update_video_widget_size(s);
 
 	QRectF slide_rect(QPointF(), QSizeF(rect.width(), m_position_slide.heightForWidth(rect.width())));
 
@@ -139,8 +158,14 @@ void Player::resizeEvent(QResizeEvent*e)
 		pause_indicator->setPos(rect.center());
 	if (play_indicator)
 		play_indicator->setPos(rect.center());
+}
 
-	resized(e->size());
+void Player::force_video_widget_size(QSizeF s)
+{
+	// force video widget to have the size s
+// 	handle_resize(s);
+
+	update_video_widget_size(s);
 }
 
 void Player::slot_durationChanged(qint64 duration)
@@ -178,8 +203,6 @@ void Player::slot_positionChanged(qint64 position)
 	if (tooltip_changed && m_position_slide.underMouse())
 	{
 		QToolTip::hideText();
-
-// 		QPoint tooltip_pos = m_mainwindow->mapFromGlobal(QCursor::pos());
 		QToolTip::showText(QCursor::pos(), m_position_slide.toolTip());
 	}
 
@@ -188,24 +211,6 @@ void Player::slot_positionChanged(qint64 position)
 	double time_stamp = real_pos / 1000.0;
 
 	Q_EMIT time_stamp_updated(time_stamp);
-
-// 	while (m_comment_pos != m_comments.end())
-// 	{
-// 		const Moving_Comment & c = * m_comment_pos;
-// 		if (c.time_stamp < time_stamp)
-// 		{
-// 			m_comment_pos ++;
-//
-// 			// 添加弹幕.
-//
-// 			if (c.type ==0)
-// 			{
-// 				add_barrage(c);
-// 			}
-//
-// 		}else
-// 			break;
-// 	}
 }
 
 void Player::slot_drag_slide(int p)
@@ -320,9 +325,11 @@ void Player::slot_metaDataChanged(QString key, QVariant v)
 	{
 		// 计算比例。
 
+		QSizeF new_video_size;
+
 		if(VideoAspect=="auto")
 		{
-			video_size = v.toSize();
+			new_video_size = v.toSize();
 		}
 		else
 		{
@@ -333,28 +340,14 @@ void Player::slot_metaDataChanged(QString key, QVariant v)
 
 			templatesize.scale(v.toSizeF(), Qt::KeepAspectRatioByExpanding);
 
-			video_size = templatesize;
+			new_video_size = templatesize;
 		}
 
-// 		if (qIsNaN(zoom_level))
-// 		{
-// 			// 根据屏幕大小决定默认的缩放比例.
-// 			QSize desktopsize = qApp->desktop()->availableGeometry().size();
-//
-// 			zoom_level = qMin(
-// 				desktopsize.height() / video_size.height()
-// 				,
-// 				desktopsize.width() / video_size.width()
-// 			);
-//
-// 			if (zoom_level <= 1.0)
-// 				zoom_level = 1.0;
-// 			else
-// 				zoom_level = (long)(zoom_level);
-//
-// 			ZoomLevelChanged(zoom_level);
-// 		}
-
+		if (new_video_size != video_size)
+		{
+			video_size = new_video_size;
+			video_size_changed(video_size);
+		}
 	}
 }
 

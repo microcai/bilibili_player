@@ -492,11 +492,11 @@ void VideoItem::paintGL(QPainter* painter, QWidget* widget)
 	}
 
 	QMatrix4x4 gl_Projection;
-	QMatrix4x4 gl_Model = sceneTransform();
+	QMatrix4x4 gl_Model = painter->combinedTransform();
 
 	if (! painter->paintEngine()->hasFeature(QPaintEngine::PixmapTransform))
 	{
-		gl_Model = sceneTransform() * painter->deviceTransform();
+		gl_Model = painter->combinedTransform() * painter->deviceTransform();
 	}
 
 	gl_Projection.ortho(0, painter->device()->width(), painter->device()->height(), 0, -1, 1);

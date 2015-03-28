@@ -40,7 +40,7 @@ class BPlayer : public Player
 	Q_OBJECT
 	Q_PROPERTY(bool UseBullet MEMBER  use_bullet)
 	Q_PROPERTY(double AllowAnySize MEMBER allow_any_resize)
-    Q_PROPERTY(double ZoomLevel READ ZoomLevel WRITE SetZoomLevel NOTIFY ZoomLevelChanged)
+    Q_PROPERTY(double ZoomLevel READ ZoomLevel WRITE SetZoomLevel)
     Q_PROPERTY(QString asspath MEMBER asspath )
 
 public:
@@ -54,15 +54,17 @@ public:
 
 	void SetZoomLevel(double v)
 	{
-		if(zoom_level !=v)
+		auto s = property("VideoSize").toSizeF() * v;
+
+		if (isFullScreen())
 		{
-			zoom_level = v;
-			ZoomLevelChanged(v);
+			// also set window Size
+			force_video_widget_size(s);
+		}else
+		{
+			resize(s.width(), s.height());
 		}
 	}
-
-Q_SIGNALS:
-	void ZoomLevelChanged(double);
 
 public Q_SLOTS:
 
@@ -73,13 +75,15 @@ public Q_SLOTS:
 
 	void start_play();
 
-
-
 private Q_SLOTS:
 
 	void add_barrage(const Moving_Comment& c);
 	void slot_mediaChanged(int);
 
+	void play_position_update(qreal);
+	void play_position_fast_forwarded(qreal);
+
+	void slot_video_size_changed(QSizeF);
 
 private:
 	Moving_Comments m_comments;

@@ -202,6 +202,11 @@ void BPlayer::start_play()
 
 	shortcut = new QShortcut(QKeySequence(Qt::CTRL + Qt::Key_Left), this);
 	connect(shortcut, SIGNAL(activated()), this, SLOT(fast_backwork()));
+
+	connect(this, SIGNAL(time_stamp_updated(qreal)), this, SLOT(play_position_update(qreal)));
+	connect(this, SIGNAL(time_stamp_fast_forward(qreal)), this, SLOT(play_position_fast_forwarded(qreal)));
+
+	connect(this, SIGNAL(video_size_changed(QSizeF)), this, SLOT(slot_video_size_changed(QSizeF)));
 }
 
 void BPlayer::add_barrage(const Moving_Comment& c)
@@ -298,13 +303,61 @@ void BPlayer::add_barrage(const Moving_Comment& c)
 	animation->start(QAbstractAnimation::DeleteWhenStopped);
 }
 
-/*
-void BPlayer::positionChanged(qint64 position)
+
+void BPlayer::toggle_full_screen_mode()
+{
+	if (window()->isFullScreen())
+	{
+		set_full_screen(false);
+	}else{
+		set_full_screen(true);
+	}
+}
+
+void BPlayer::slot_video_size_changed(QSizeF video_size)
+{
+	if (qIsNaN(zoom_level))
+	{
+		// 根据屏幕大小决定默认的缩放比例.
+		QSize desktopsize = qApp->desktop()->availableGeometry().size();
+
+		zoom_level = qMin(
+			desktopsize.height() / video_size.height()
+			,
+			desktopsize.width() / video_size.width()
+		);
+
+		if (zoom_level <= 1.0)
+			zoom_level = 1.0;
+		else
+			zoom_level = (long)(zoom_level);
+
+		SetZoomLevel(zoom_level);
+		updateGeometry();
+	}
+}
+
+void BPlayer::slot_mediaChanged(int)
+{
+	std::cout << "playing: " << play_list()->currentMedia().canonicalUrl().toDisplayString().toStdString() << std::endl;
+}
+
+void BPlayer::play_position_fast_forwarded(qreal time_stamp)
+{
+	m_comment_pos = m_comments.begin();
+
+	while (m_comment_pos != m_comments.end())
+	{
+		const Moving_Comment & c = * m_comment_pos;
+		if (c.time_stamp > time_stamp)
+			break;
+		m_comment_pos ++;
+	}
+}
+
+void BPlayer::play_position_update(qreal time_stamp)
 {
 	// 播放弹幕.
-
-	double time_stamp = real_pos / 1000.0;
-
 	while (m_comment_pos != m_comments.end())
 	{
 		const Moving_Comment & c = * m_comment_pos;
@@ -322,21 +375,7 @@ void BPlayer::positionChanged(qint64 position)
 		}else
 			break;
 	}
-}*/
-
-void BPlayer::toggle_full_screen_mode()
-{
-	if (window()->isFullScreen())
-	{
-		set_full_screen(false);
-	}else{
-		set_full_screen(true);
-	}
 }
 
-void BPlayer::slot_mediaChanged(int)
-{
-	std::cout << "playing: " << play_list()->currentMedia().canonicalUrl().toDisplayString().toStdString() << std::endl;
-}
 
 #include "bplayer.moc"

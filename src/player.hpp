@@ -48,6 +48,8 @@ public:
 Q_SIGNALS:
 	void played(int index);
 
+	void video_size_changed(QSizeF);
+
 	// resize signal, then you might want to relocate/resize the widgets that you have add
 	void resized(QSize);
 
@@ -74,6 +76,8 @@ public Q_SLOTS:
 
 	void toogle_play_pause();
 
+	void force_video_widget_size(QSizeF);
+
 
 protected:
 	virtual void resizeEvent(QResizeEvent*);
@@ -83,6 +87,8 @@ protected:
 	qint64 map_position_from_media(qint64);
 
 private Q_SLOTS:
+	void update_video_widget_size(QSizeF);
+	void handle_resize(QSizeF);
 
 	void slot_drag_slide(int);
 	void slot_drag_slide_done();
