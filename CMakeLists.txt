@@ -41,7 +41,7 @@ set(BOX2D_BUILD_SHARED  OFF)
 set(BOX2D_BUILD_STATIC ON)
 set(BOX2D_BUILD_EXAMPLES OFF)
 
-add_subdirectory(third_party/Box2D/Box2D EXCLUDE_FROM_ALL)
+# add_subdirectory(third_party/Box2D/Box2D EXCLUDE_FROM_ALL)
 
 pkg_check_modules(LIBASS REQUIRED libass)
 
