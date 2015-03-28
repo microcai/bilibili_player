@@ -204,6 +204,7 @@ int main(int argc, char* argv[])
 	if (cliparser.isSet("ass"))
 	{
 		player.setProperty("asspath", cliparser.value("ass"));
+		avplayer.set_subtitle(cliparser.value("ass"));
 	}
 
 	auto bilibili_res = new BiliBiliRes(bilibili_url.toStdString());

@@ -461,59 +461,6 @@ void BPlayer::add_barrage(const Moving_Comment& c)
 	animation->start(QAbstractAnimation::DeleteWhenStopped);
 }
 
-void BPlayer::drag_slide(int p)
-{
-	_drag_positoin = p;
-
-	auto current_play_time = QString("%1:%2:%3").arg(((_drag_positoin/1000)/60)/60)
-		.arg(QString::fromStdString(std::to_string(((_drag_positoin/1000)/60) % 60)), 2, QChar('0'))
-		.arg(QString::fromStdString(std::to_string((_drag_positoin/1000) % 60)), 2, QChar('0'));
-
-	QToolTip::hideText();
-	QToolTip::showText(QCursor::pos(), current_play_time);
-}
-
-void BPlayer::drag_slide_done()
-{
-	if (_drag_positoin != -1)
-	{
-		auto result = map_position_to_media(_drag_positoin);
-		if (result.first == play_list->currentIndex())
-			vplayer->setPosition(result.second);
-		else
-		{
-			vplayer->stop();
-			play_list->setCurrentIndex(result.first);
-			vplayer->setPosition(result.second);
-			vplayer->play();
-		}
-
-		// 移动弹幕位置.
-		m_comment_pos = m_comments.begin();
-
-		while (m_comment_pos != m_comments.end())
-		{
-			const Moving_Comment & c = * m_comment_pos;
-			if (c.time_stamp > _drag_positoin / 1000.0)
-				break;
-			m_comment_pos ++;
-		}
-
-	}
-	_drag_positoin = -1;
-}
-
-void BPlayer::fast_backwork()
-{
-	_drag_positoin = position_slide->value() - 30000;
-	drag_slide_done();
-}
-
-void BPlayer::fast_forward()
-{
-	_drag_positoin = position_slide->value() + 30000;
-	drag_slide_done();
-}
 
 void BPlayer::positionChanged(qint64 position)
 {
@@ -536,8 +483,6 @@ void BPlayer::positionChanged(qint64 position)
 	if (tooltip_changed && position_slide->underMouse())
 	{
 		QToolTip::hideText();
-
-// 		QPoint tooltip_pos = m_mainwindow->mapFromGlobal(QCursor::pos());
 		QToolTip::showText(QCursor::pos(), position_slide->toolTip());
 	}
 
@@ -601,10 +546,7 @@ void BPlayer::adjust_window_size(QSizeF video_widget_size)
 	scene->setSceneRect(QRectF(QPointF(), player_visiable_area_size));
 	media_buffer_indicator.setPos(scene->sceneRect().center());
 
-	if (pause_indicator)
-		pause_indicator->setPos(scene->sceneRect().center());
-	if (play_indicator)
-		play_indicator->setPos(scene->sceneRect().center());
+
 
 // 	m_ass_item->setPos(scene->sceneRect().center());
 
@@ -921,8 +863,6 @@ void BPlayer::play_state_changed(QMediaPlayer::State state)
 		}
 	}
 }
-
-
 
 void BPlayer::slot_mediaStatusChanged(QMediaPlayer::MediaStatus status)
 {

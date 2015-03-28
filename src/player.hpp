@@ -15,6 +15,8 @@
 #include "screensaver/screensaverinhibitor.hpp"
 #include "compositionsuspender.hpp"
 #include "qgraphicsbusybufferingitem.hpp"
+#include "asssubtitlesitem.hpp"
+#include "defs.hpp"
 
 class VideoItem;
 
@@ -32,8 +34,6 @@ public:
 		return m_player.playlist();
 	}
 
-	void set_play_list(QMediaPlaylist* list){m_player.setPlaylist(list);};
-
 Q_SIGNALS:
 	void played(int index);
 
@@ -43,26 +43,55 @@ Q_SIGNALS:
 	void media_stalled();
 	void media_buffered();
 
+	// 更新播放时间，可以在这里添加弹幕功能
+	void time_stamp_updated(qreal);
+	void time_stamp_fast_forward(qreal);
 
 public Q_SLOTS:
+	void set_play_list(QMediaPlaylist* list){m_player.setPlaylist(list);};
+
+	void set_subtitle(QString subtitlefile);
+
 	void play(){m_player.play();}
 	void pause(){m_player.pause();}
 	void stop(){m_player.stop();}
 
+	void fast_forward(); // call this to forward 90s
+	void fast_backwork(); // call this to back forward 90s
+
+    void set_full_screen(bool v = true);
+
 protected:
 	virtual void resizeEvent(QResizeEvent*);
 
+protected:
+	std::pair<int, qint64> map_position_to_media(qint64);
+	qint64 map_position_from_media(qint64);
+
 private Q_SLOTS:
 
+	void slot_drag_slide(int);
+	void slot_drag_slide_done();
+
+	void slot_play_state_changed(QMediaPlayer::State);
+	void slot_mediaStatusChanged(QMediaPlayer::MediaStatus);
+
 	void slot_durationChanged(qint64);
+	void slot_positionChanged(qint64);
 
 private:
+	QGraphicsScene m_scene;
+
 	QScopedPointer<ScreenSaverInhibitor> m_screesave_inhibitor;
 	QScopedPointer<CompositionSuspender> m_CompositionSuspender;
-	QGraphicsBusybufferingItem m_media_buffer_indicator;
+	QPointer<AssSubtitlesItem> m_ass_item;
 
+	// 进度条拖放位置
+	int _drag_positoin = -1;
+	VideoURLs urls;
+
+	// 播放控件们
 	QMediaPlayer m_player;
-
 	QGraphicsVideoItem* m_video_item_no_gl;
 	VideoItem* m_video_item_gl;
 
@@ -71,6 +100,9 @@ private:
 	QSlider	m_position_slide;
 	QGraphicsProxyWidget* m_current_slide;
 
-	QGraphicsScene m_scene;
+	QPointer<QGraphicsObject> play_indicator;
+	QPointer<QGraphicsObject> pause_indicator;
+	QGraphicsBusybufferingItem m_media_buffer_indicator;
+
 };
 
