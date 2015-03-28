@@ -14,6 +14,7 @@
 
 #include "bplayer.hpp"
 #include "bilibilires.hpp"
+#include "player.hpp"
 
 static void fuckoff_low_dpi_screen(const QScreen* screen, QSize native_screen_size)
 {
@@ -173,6 +174,9 @@ int main(int argc, char* argv[])
 		cliparser.showHelp(1);
 	}
 
+	Player avplayer;
+	QMediaPlaylist playlist;
+
 	BPlayer player;
 
 	if (cliparser.isSet("use-bullet"))
@@ -211,14 +215,24 @@ int main(int argc, char* argv[])
 		VideoURL url;
 		url.url = cliparser.value("videourl").toStdString();
 		player.append_video_url(url);
+
+		playlist.addMedia(QUrl(cliparser.value("videourl")));
+
 	}else
 	{
 		QObject::connect(bilibili_res, SIGNAL(video_url_extracted(VideoURL)), &player, SLOT(append_video_url(VideoURL)));
 	}
 
-	QObject::connect(bilibili_res, SIGNAL(barrage_extracted(QDomDocument)), &player, SLOT(set_barrage_dom(QDomDocument)));
-	QObject::connect(bilibili_res, SIGNAL(finished()), &player, SLOT(start_play()));
 	QObject::connect(bilibili_res, SIGNAL(finished()), bilibili_res, SLOT(deleteLater()));
+
+	QObject::connect(bilibili_res, SIGNAL(barrage_extracted(QDomDocument)), &player, SLOT(set_barrage_dom(QDomDocument)));
+// 	QObject::connect(bilibili_res, SIGNAL(finished()), &player, SLOT(start_play()));
+
+// 	QObject::connect(bilibili_res, SIGNAL(barrage_extracted(QDomDocument)), &avplayer, SLOT(set_barrage_dom(QDomDocument)));
+	QObject::connect(bilibili_res, SIGNAL(finished()), &avplayer, SLOT(show()));
+	QObject::connect(bilibili_res, SIGNAL(finished()), &avplayer, SLOT(play()));
+
+	avplayer.set_play_list(&playlist);
 
 	app.exec();
 

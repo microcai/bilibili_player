@@ -14,24 +14,18 @@
 
 #include "screensaver/screensaverinhibitor.hpp"
 #include "compositionsuspender.hpp"
+#include "qgraphicsbusybufferingitem.hpp"
 
 class VideoItem;
 
 class PlayList;
-class Player : public QWidget
+class Player : public QGraphicsView
 {
     Q_OBJECT
 public:
 
-	Player(QWidget* parent, bool use_opengl = false);
-
-	// the scene used by player
-	QGraphicsScene* scene() const {
-		return const_cast<QGraphicsScene*>(&m_scene);
-	}
-	QGraphicsView* view() const {
-		return const_cast<QGraphicsView*>(&m_view);
-	}
+	Player(QWidget* parent = nullptr, bool use_opengl = true);
+	~Player();
 
 	// the the play play list, if none set, return empty list
 	QMediaPlaylist * play_list(){
@@ -65,6 +59,7 @@ private Q_SLOTS:
 private:
 	QScopedPointer<ScreenSaverInhibitor> m_screesave_inhibitor;
 	QScopedPointer<CompositionSuspender> m_CompositionSuspender;
+	QGraphicsBusybufferingItem m_media_buffer_indicator;
 
 	QMediaPlayer m_player;
 
@@ -76,7 +71,6 @@ private:
 	QSlider	m_position_slide;
 	QGraphicsProxyWidget* m_current_slide;
 
-	QGraphicsView m_view;
 	QGraphicsScene m_scene;
 };
 

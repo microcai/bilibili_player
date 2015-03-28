@@ -145,8 +145,11 @@ BPlayer::BPlayer(QObject * parent)
 
 BPlayer::~BPlayer()
 {
-	vplayer->stop();
-	delete vplayer;
+	if (vplayer)
+	{
+		vplayer->stop();
+		delete vplayer;
+	}
 	if (m_mainwindow)
 		m_mainwindow->deleteLater();
 	m_mainwindow = nullptr;

@@ -102,6 +102,9 @@ void AssSubtitlesItem::update_play_position(qulonglong pos)
 {
 	Q_D(AssSubtitlesItem);
 
+	if (!d->_ass_track)
+		return;
+
 	int detect_change = 0;
 
 	d->_ass_frame = ass_render_frame(d->_ass_render, d->_ass_track, pos, &detect_change);
