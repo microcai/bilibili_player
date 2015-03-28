@@ -24,6 +24,9 @@ class PlayList;
 class Player : public QGraphicsView
 {
     Q_OBJECT
+	Q_PROPERTY(QString VideoAspect MEMBER  VideoAspect)
+	Q_PROPERTY(QSizeF VideoSize MEMBER  video_size)
+
 public:
 
 	Player(QWidget* parent = nullptr, bool use_opengl = true);
@@ -90,6 +93,8 @@ private Q_SLOTS:
 	void slot_durationChanged(qint64);
 	void slot_positionChanged(qint64);
 
+	void slot_metaDataChanged(QString key,QVariant v);
+
 private:
 	QGraphicsScene m_scene;
 
@@ -112,6 +117,9 @@ private:
 	QPointer<QGraphicsObject> play_indicator;
 	QPointer<QGraphicsObject> pause_indicator;
 	QGraphicsBusybufferingItem m_media_buffer_indicator;
+
+	QString VideoAspect = "auto";
+	QSizeF video_size;
 
 protected:
 	QPointer<AssSubtitlesItem> m_ass_item;

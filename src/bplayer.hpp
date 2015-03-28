@@ -40,7 +40,6 @@ class BPlayer : public Player
 	Q_OBJECT
 	Q_PROPERTY(bool UseBullet MEMBER  use_bullet)
 	Q_PROPERTY(double AllowAnySize MEMBER allow_any_resize)
-	Q_PROPERTY(QString VideoAspect MEMBER  VideoAspect)
     Q_PROPERTY(double ZoomLevel READ ZoomLevel WRITE SetZoomLevel NOTIFY ZoomLevelChanged)
     Q_PROPERTY(QString asspath MEMBER asspath )
 
@@ -67,7 +66,7 @@ Q_SIGNALS:
 
 public Q_SLOTS:
 
-	void toogle_full_screen_mode();
+	void toggle_full_screen_mode();
 	void append_video_url(VideoURL url);
 
 	void set_barrage_dom(QDomDocument barrage);
@@ -79,15 +78,8 @@ public Q_SLOTS:
 private Q_SLOTS:
 
 	void add_barrage(const Moving_Comment& c);
-
-
-	void slot_metaDataChanged(QString key,QVariant v);
-
 	void slot_mediaChanged(int);
 
-protected:
-	std::pair<int, qint64> map_position_to_media(qint64);
-	qint64 map_position_from_media(qint64);
 
 private:
 	Moving_Comments m_comments;
@@ -98,7 +90,6 @@ private:
 
 	DanmuManager m_danmumgr;
 	bool use_bullet = false;
-	QString VideoAspect = "auto";
 	bool allow_any_resize = false;
 	QString asspath;
 };

@@ -99,7 +99,10 @@ void Player::resizeEvent(QResizeEvent*e)
 
 	video_rect.moveCenter(rect.center());
 	if (m_ass_item)
+	{
 		m_ass_item->update_video_size(video_widget_size);
+		m_ass_item->setPos(video_rect.topLeft());
+	}
 
 	// 调整视频大小
 	if(m_video_item_gl)
@@ -179,7 +182,6 @@ void Player::slot_positionChanged(qint64 position)
 // 		QPoint tooltip_pos = m_mainwindow->mapFromGlobal(QCursor::pos());
 		QToolTip::showText(QCursor::pos(), m_position_slide.toolTip());
 	}
-
 
 	// 播放弹幕.
 
@@ -311,6 +313,51 @@ void Player::slot_play_state_changed(QMediaPlayer::State state)
 	}
 }
 
+
+void Player::slot_metaDataChanged(QString key, QVariant v)
+{
+	if (key == "Resolution")
+	{
+		// 计算比例。
+
+		if(VideoAspect=="auto")
+		{
+			video_size = v.toSize();
+		}
+		else
+		{
+			int w=0,h=0;
+			std::sscanf(VideoAspect.toStdString().c_str(),  "%d:%d", &w,&h);
+
+			QSizeF templatesize(w,h);
+
+			templatesize.scale(v.toSizeF(), Qt::KeepAspectRatioByExpanding);
+
+			video_size = templatesize;
+		}
+
+// 		if (qIsNaN(zoom_level))
+// 		{
+// 			// 根据屏幕大小决定默认的缩放比例.
+// 			QSize desktopsize = qApp->desktop()->availableGeometry().size();
+//
+// 			zoom_level = qMin(
+// 				desktopsize.height() / video_size.height()
+// 				,
+// 				desktopsize.width() / video_size.width()
+// 			);
+//
+// 			if (zoom_level <= 1.0)
+// 				zoom_level = 1.0;
+// 			else
+// 				zoom_level = (long)(zoom_level);
+//
+// 			ZoomLevelChanged(zoom_level);
+// 		}
+
+	}
+}
+
 void Player::slot_mediaStatusChanged(QMediaPlayer::MediaStatus status)
 {
 
@@ -339,6 +386,12 @@ void Player::slot_mediaStatusChanged(QMediaPlayer::MediaStatus status)
 
 void Player::set_full_screen(bool is_full)
 {
+
+	if(is_full)
+		window()->setWindowState( window()->windowState() | Qt::WindowFullScreen );
+	else
+		window()->setWindowState( window()->windowState() & ~Qt::WindowFullScreen );
+
 	m_CompositionSuspender.reset();
 	m_CompositionSuspender.reset(new CompositionSuspender(this));
 
@@ -472,4 +525,5 @@ void Player::toogle_play_pause()
 		}
 	}
 }
+
 

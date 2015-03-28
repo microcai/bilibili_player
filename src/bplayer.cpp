@@ -160,9 +160,9 @@ void BPlayer::start_play()
 	std::cout << "playing: " << play_list()->currentMedia().canonicalUrl().toDisplayString().toStdString() << std::endl;
 
 	QShortcut* shortcut = new QShortcut(QKeySequence(QKeySequence::FullScreen), this);
-	connect(shortcut, SIGNAL(activated()), this, SLOT(toogle_full_screen_mode()));
+	connect(shortcut, SIGNAL(activated()), this, SLOT(toggle_full_screen_mode()));
 	shortcut = new QShortcut(QKeySequence("f"), this);
-	connect(shortcut, SIGNAL(activated()), this, SLOT(toogle_full_screen_mode()));
+	connect(shortcut, SIGNAL(activated()), this, SLOT(toggle_full_screen_mode()));
 
 	shortcut = new QShortcut(QKeySequence(Qt::Key_Space), this);
 	connect(shortcut, SIGNAL(activated()), this, SLOT(toogle_play_pause()));
@@ -324,102 +324,19 @@ void BPlayer::positionChanged(qint64 position)
 	}
 }*/
 
-void BPlayer::toogle_full_screen_mode()
+void BPlayer::toggle_full_screen_mode()
 {
-	set_full_screen(windowState() ^ Qt::WindowFullScreen);
-}
-
-void BPlayer::slot_metaDataChanged(QString key, QVariant v)
-{
-#if 0
-	if (key == "Resolution")
+	if (window()->isFullScreen())
 	{
-		// 计算比例。
-
-		if(VideoAspect=="auto")
-		{
-			video_size = v.toSize();
-		}
-		else
-		{
-			int w=0,h=0;
-			std::sscanf(VideoAspect.toStdString().c_str(),  "%d:%d", &w,&h);
-
-			QSizeF templatesize(w,h);
-
-			templatesize.scale(v.toSizeF(), Qt::KeepAspectRatioByExpanding);
-
-			video_size = templatesize;
-
-		}
-
-		if (qIsNaN(zoom_level))
-		{
-			// 根据屏幕大小决定默认的缩放比例.
-			QSize desktopsize = qApp->desktop()->availableGeometry().size();
-
-			zoom_level = qMin(
-				desktopsize.height() / video_size.height()
-				,
-				desktopsize.width() / video_size.width()
-			);
-
-			if (zoom_level <= 1.0)
-				zoom_level = 1.0;
-			else
-				zoom_level = (long)(zoom_level);
-
-			ZoomLevelChanged(zoom_level);
-		}
-
+		set_full_screen(false);
+	}else{
+		set_full_screen(true);
 	}
-#endif
 }
 
 void BPlayer::slot_mediaChanged(int)
 {
 	std::cout << "playing: " << play_list()->currentMedia().canonicalUrl().toDisplayString().toStdString() << std::endl;
-
-}
-
-std::pair< int, qint64 > BPlayer::map_position_to_media(qint64 pos)
-{
-	int media_index = 0;
-
-	if (urls.size() == 1)
-	{
-		return std::make_pair(media_index, pos);
-	}
-
-	for (; media_index < urls.size(); media_index++)
-	{
-		const VideoURL & url = urls[media_index];
-		if (pos > url.duration)
-		{
-			pos -= url.duration;
-		}else
-		{
-			return std::make_pair(media_index, pos);
-		}
-	}
-
-	return std::make_pair(media_index, pos);
-}
-
-
-qint64 BPlayer::map_position_from_media(qint64 pos)
-{
-	if (urls.size() == 1)
-		return pos;
-
-	if (play_list()->currentIndex() == 0)
-		return pos;
-
-	for (int i = 0; i < play_list()->currentIndex(); i++)
-	{
-		pos += urls[i].duration;
-	}
-	return pos;
 }
 
 #include "bplayer.moc"
