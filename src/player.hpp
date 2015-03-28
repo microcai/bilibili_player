@@ -34,6 +34,14 @@ public:
 		return m_player.playlist();
 	}
 
+    QList<QGraphicsItem *> items(const QRect &rect, Qt::ItemSelectionMode mode = Qt::IntersectsItemShape) const
+    {
+		auto r = QGraphicsView::items(rect, mode);
+		r.removeAll(m_current_video_item);
+		return r;
+	}
+
+
 Q_SIGNALS:
 	void played(int index);
 
@@ -61,6 +69,9 @@ public Q_SLOTS:
 
     void set_full_screen(bool v = true);
 
+	void toogle_play_pause();
+
+
 protected:
 	virtual void resizeEvent(QResizeEvent*);
 
@@ -84,11 +95,9 @@ private:
 
 	QScopedPointer<ScreenSaverInhibitor> m_screesave_inhibitor;
 	QScopedPointer<CompositionSuspender> m_CompositionSuspender;
-	QPointer<AssSubtitlesItem> m_ass_item;
 
 	// 进度条拖放位置
 	int _drag_positoin = -1;
-	VideoURLs urls;
 
 	// 播放控件们
 	QMediaPlayer m_player;
@@ -103,6 +112,10 @@ private:
 	QPointer<QGraphicsObject> play_indicator;
 	QPointer<QGraphicsObject> pause_indicator;
 	QGraphicsBusybufferingItem m_media_buffer_indicator;
+
+protected:
+	QPointer<AssSubtitlesItem> m_ass_item;
+	VideoURLs urls;
 
 };
 

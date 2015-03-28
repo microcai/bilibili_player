@@ -174,19 +174,15 @@ int main(int argc, char* argv[])
 		cliparser.showHelp(1);
 	}
 
-	Player avplayer;
 	QMediaPlaylist playlist;
+	playlist.setPlaybackMode(QMediaPlaylist::Sequential);
 
-	BPlayer player;
+	BPlayer player((cliparser.value("nogl") != "no"));
+	player.set_play_list(&playlist);
 
 	if (cliparser.isSet("use-bullet"))
 	{
 		player.setProperty("UseBullet", cliparser.value("use-bullet") != "no");
-	}
-
-	if (cliparser.isSet("nogl"))
-	{
-		player.setProperty("UseOpenGL", ! (cliparser.value("nogl") != "no"));
 	}
 
 	if (cliparser.isSet("force-aspect"))
@@ -203,8 +199,7 @@ int main(int argc, char* argv[])
 
 	if (cliparser.isSet("ass"))
 	{
-		player.setProperty("asspath", cliparser.value("ass"));
-		avplayer.set_subtitle(cliparser.value("ass"));
+		player.set_subtitle(cliparser.value("ass"));
 	}
 
 	auto bilibili_res = new BiliBiliRes(bilibili_url.toStdString());
@@ -227,13 +222,8 @@ int main(int argc, char* argv[])
 	QObject::connect(bilibili_res, SIGNAL(finished()), bilibili_res, SLOT(deleteLater()));
 
 	QObject::connect(bilibili_res, SIGNAL(barrage_extracted(QDomDocument)), &player, SLOT(set_barrage_dom(QDomDocument)));
-// 	QObject::connect(bilibili_res, SIGNAL(finished()), &player, SLOT(start_play()));
-
-// 	QObject::connect(bilibili_res, SIGNAL(barrage_extracted(QDomDocument)), &avplayer, SLOT(set_barrage_dom(QDomDocument)));
-	QObject::connect(bilibili_res, SIGNAL(finished()), &avplayer, SLOT(show()));
-	QObject::connect(bilibili_res, SIGNAL(finished()), &avplayer, SLOT(play()));
-
-	avplayer.set_play_list(&playlist);
+	QObject::connect(bilibili_res, SIGNAL(finished()), &player, SLOT(start_play()));
+	QObject::connect(bilibili_res, SIGNAL(finished()), &player, SLOT(show()));
 
 	app.exec();
 

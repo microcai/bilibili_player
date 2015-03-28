@@ -1,9 +1,15 @@
 
 #include "player.hpp"
 
+#include <numeric>
 #include <QGraphicsVideoItem>
+
 #include <QOpenGLWidget>
 #include "videoitem.hpp"
+#include "graphicssvgitem.hpp"
+
+#include "malloc.h"
+
 
 Player::~Player()
 {
@@ -27,6 +33,10 @@ Player::Player(QWidget* parent, bool use_opengl)
 	setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 	setContentsMargins(0,0,0,0);
 	setBackgroundRole(QPalette::WindowText);
+
+
+	m_player.setNotifyInterval(1000/23.976);
+
 
 	if (use_opengl)
 	{
@@ -132,6 +142,12 @@ void Player::resizeEvent(QResizeEvent*e)
 
 void Player::slot_durationChanged(qint64 duration)
 {
+	if (urls.size() > 1)
+	{
+		duration = std::accumulate(urls.begin(), urls.end(), 0, [](qint64 d, const VideoURL& u){
+			return d + u.duration;
+		});
+	}
 	// 更新进度条君.
 	m_position_slide.setRange(0, duration);
 }
@@ -342,3 +358,118 @@ void Player::set_full_screen(bool is_full)
 		setCursor(Qt::ArrowCursor);
 	}
 }
+
+void Player::toogle_play_pause()
+{
+	switch (m_player.state())
+	{
+		case QMediaPlayer::PlayingState:
+		{
+			m_player.pause();
+
+			// display 一个 pause 图标
+
+			if (pause_indicator)
+				pause_indicator->deleteLater();
+
+			QGraphicsSvgItem * svg_item = new GraphicsSvgItem("://res/pause.svg");
+			pause_indicator = svg_item;
+
+			scene()->addItem(pause_indicator);
+
+			auto effect = new QGraphicsOpacityEffect;
+
+			pause_indicator->setGraphicsEffect(effect);
+
+			auto ani_group = new QParallelAnimationGroup(svg_item);
+			auto ani = new QPropertyAnimation(effect, "opacity", ani_group);
+			auto ani_4 = new QPropertyAnimation(svg_item, "scale", ani_group);
+
+			ani_group->addAnimation(ani);
+			ani_group->addAnimation(ani_4);
+			ani_4->setDuration(330);
+			ani_4->setStartValue(3.0);
+			ani_4->setEndValue(1.0);
+			ani_4->setEasingCurve(QEasingCurve::OutBack);
+
+			ani->setDuration(800);
+
+			ani->setStartValue(0.0);
+			ani->setEndValue(0.7);
+
+			pause_indicator->setPos(scene()->sceneRect().center());
+			pause_indicator->show();
+
+			ani_group->start(QAbstractAnimation::DeleteWhenStopped);
+
+			malloc_trim(0);
+
+			break;
+		}
+		case QMediaPlayer::PausedState:
+		{
+			m_player.play();
+
+			if (pause_indicator)
+				pause_indicator->deleteLater();
+			if (play_indicator)
+				play_indicator->deleteLater();
+
+			QGraphicsSvgItem * svg_item = new GraphicsSvgItem("://res/play.svg");
+			play_indicator = svg_item;
+
+			scene()->addItem(play_indicator);
+
+			auto effect = new QGraphicsOpacityEffect;
+
+			play_indicator->setGraphicsEffect(effect);
+
+			auto ani_group = new QSequentialAnimationGroup(svg_item);
+
+			auto ani_1 = new QPropertyAnimation(effect, "opacity", ani_group);
+
+			ani_1->setDuration(50);
+
+			ani_1->setStartValue(0.0);
+			ani_1->setEndValue(0.7);
+
+			auto ani_2 = new QPropertyAnimation(effect, "opacity", ani_group);
+
+			ani_2->setDuration(300);
+
+			ani_2->setStartValue(0.7);
+			ani_2->setEndValue(0.6);
+
+			auto ani_group_2 = new QParallelAnimationGroup(svg_item);
+
+			auto ani_3 = new QPropertyAnimation(effect, "opacity", ani_group_2);
+			auto ani_4 = new QPropertyAnimation(svg_item, "scale", ani_group_2);
+
+			ani_3->setDuration(750);
+			ani_3->setStartValue(0.6);
+			ani_3->setEndValue(0.0);
+
+			ani_4->setDuration(880);
+			ani_4->setStartValue(1.0);
+			ani_4->setEndValue(3.2);
+			ani_4->setEasingCurve(QEasingCurve::InBack);
+
+			ani_group->addAnimation(ani_1);
+			ani_group->addAnimation(ani_2);
+
+			ani_group_2->addAnimation(ani_3);
+			ani_group_2->addAnimation(ani_4);
+
+			ani_group->addAnimation(ani_group_2);
+
+			connect(ani_group, SIGNAL(finished()), play_indicator, SLOT(deleteLater()));
+			play_indicator->setPos(scene()->sceneRect().center());
+			play_indicator->show();
+
+			ani_group->start(QAbstractAnimation::DeleteWhenStopped);
+
+			break;
+		}
+	}
+}
+
