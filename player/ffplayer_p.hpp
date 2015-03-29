@@ -1,11 +1,15 @@
-/*
- * 
- */
 
-#ifndef FFPLAYER_PRIVATE_H
-#define FFPLAYER_PRIVATE_H
+#pragma once
 
-#include <QtCore/qglobal.h>
+extern "C"
+{
+#include <libavcodec/avcodec.h>
+#include <libavformat/avformat.h>
+}
+
+#include <QtCore>
+
+
 
 class FFPlayer;
 class FFPlayerPrivate
@@ -19,4 +23,3 @@ private:
     Q_DECLARE_PUBLIC(FFPlayer)
 };
 
-#endif // FFPLAYER_PRIVATE_H
