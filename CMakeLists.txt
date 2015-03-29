@@ -45,6 +45,8 @@ set(BOX2D_BUILD_EXAMPLES OFF)
 
 pkg_check_modules(LIBASS REQUIRED libass)
 
+pkg_check_modules(FFMPEG REQUIRED libavformat libavcodec libavfilter libavutil libavresample libavdevice)
+
 find_package(KF5WindowSystem)
 
 include_directories(${OPENSSL_INCLUDE_DIR})
@@ -56,6 +58,8 @@ link_directories    ( ${BULLET_LIBRARY_DIRS} )
 link_libraries(${OPENSSL_LIBRARIES} ${Boost_LIBRARIES} ${LIBASS_LDFLAGS} ${LIBASS_LIBRARIES})
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
+
+add_subdirectory(player)
 
 add_subdirectory(src/)
 
