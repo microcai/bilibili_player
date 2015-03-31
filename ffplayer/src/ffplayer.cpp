@@ -17,11 +17,17 @@ FFPlayerPrivate::FFPlayerPrivate(FFPlayer* q)
 {
 	avcodec_register_all();
 	av_register_all();
+
+
+
 }
+
+
 
 FFPlayerPrivate::~FFPlayerPrivate()
 {
 }
+
 
 FFPlayer::FFPlayer()
  : d_ptr(new FFPlayerPrivate(this))
@@ -38,4 +44,5 @@ FFPlayer::~FFPlayer()
 void FFPlayer::start_decode(QIODevice* input)
 {
 // 	avformat_open_input();
-} 
+
+}

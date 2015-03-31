@@ -59,7 +59,7 @@ link_libraries(${OPENSSL_LIBRARIES} ${Boost_LIBRARIES} ${LIBASS_LDFLAGS} ${LIBAS
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-add_subdirectory(player)
+add_subdirectory(ffplayer/)
 
 add_subdirectory(src/)
 

@@ -37,7 +37,7 @@ static std::string get_video_url(const std::string& cid)
 	auto formated_url = boost::format("http://interface.bilibili.com/playurl?appkey=%s&cid=%s&quality=4%s&sign=%s")
 		% APPKEY % cid % SECRETKEY % get_sign_for_play_url(cid);
 
- 	return boost::str(formated_url);
+	return boost::str(formated_url);
 }
 
 static std::string get_comment_url(const std::string& aid)
@@ -47,29 +47,36 @@ static std::string get_comment_url(const std::string& aid)
 
 void BiliBiliRes::extract_aid_cid_stuff()
 {
-    std::string real_player_page = current_reply->readAll().toStdString();
+	QString real_player_page_data = current_reply->readAll();
 
-    // extract aid and cid from url
-    boost::smatch what;
+	qDebug() << real_player_page_data;
 
-    if (boost::regex_search(real_player_page, what, boost::regex("cid=([0-9]+)&aid=([0-9]+)")))
-    {
-        cid = what[1];
-        aid = what[2];
-        aid_extracted(QString::fromStdString(aid));
-        cid_extracted(QString::fromStdString(cid));
-    } else if (boost::regex_search(real_player_page, what, boost::regex("bili-cid=([0-9]+)&bili-aid=([0-9]+)")))
-    {
-        cid = what[1];
-        aid = what[2];
-        aid_extracted(QString::fromStdString(aid));
-        cid_extracted(QString::fromStdString(cid));
-    }
-    else if (boost::regex_search(real_player_page, what, boost::regex("bili-cid=([0-9]+)&")))
-    {
-        cid = what[1];
-        cid_extracted(QString::fromStdString(cid));
-    }
+	std::string real_player_page = real_player_page_data.toStdString();
+
+	// extract aid and cid from url
+	boost::smatch what;
+
+	if (boost::regex_search(real_player_page, what, boost::regex("cid=([0-9]+)&aid=([0-9]+)")))
+	{
+		cid = what[1];
+		aid = what[2];
+		aid_extracted(QString::fromStdString(aid));
+		cid_extracted(QString::fromStdString(cid));
+	} else if (boost::regex_search(real_player_page, what, boost::regex("bili-cid=([0-9]+)&bili-aid=([0-9]+)")))
+	{
+		cid = what[1];
+		aid = what[2];
+		aid_extracted(QString::fromStdString(aid));
+		cid_extracted(QString::fromStdString(cid));
+	}
+	else if (boost::regex_search(real_player_page, what, boost::regex("bili-cid=([0-9]+)&")))
+	{
+		cid = what[1];
+		cid_extracted(QString::fromStdString(cid));
+	}else
+	{
+		cid_extract_errored();
+	}
 }
 
 void BiliBiliRes::slot_cid_extracted(QString cid)
@@ -96,39 +103,44 @@ void BiliBiliRes::slot_cid_extracted(QString cid)
 
 void BiliBiliRes::extract_flv_url()
 {
-    QDomDocument m_xml;
+	QDomDocument m_xml;
 
-    m_xml.setContent(current_reply->readAll());
+	m_xml.setContent(current_reply->readAll());
 
-    // now get url
-    QDomNodeList durls = m_xml.elementsByTagName("durl");
+	// now get url
+	QDomNodeList durls = m_xml.elementsByTagName("durl");
 
-    for (int i = 0; i < durls.size(); i++)
-    {
+	for (int i = 0; i < durls.size(); i++)
+	{
 		QDomElement durl = durls.at(i).toElement();
-        QDomElement url = durl.firstChildElement("url");
-        QString data = url.text();
+		QDomElement url = durl.firstChildElement("url");
+		QString data = url.text();
 
-        VideoURL vurl;
+		VideoURL vurl;
 
-        vurl.order = i;
-        vurl.url = url.text().toStdString();
+		vurl.order = i;
+		vurl.url = url.text().toStdString();
 
-        vurl.duration = durl.firstChildElement("length").text().toULongLong();
+		vurl.duration = durl.firstChildElement("length").text().toULongLong();
 
-        auto backup_urls = url.firstChildElement("backup_url").elementsByTagName("url");
+		auto backup_urls = url.firstChildElement("backup_url").elementsByTagName("url");
 
-        for (int i=0; i < backup_urls.size(); i++)
-        {
-            QDomElement backup_url = backup_urls.at(i).toElement();
-            vurl.backup_urls.push_back(backup_url.text().toStdString());
-        }
+		for (int i=0; i < backup_urls.size(); i++)
+		{
+			QDomElement backup_url = backup_urls.at(i).toElement();
+			vurl.backup_urls.push_back(backup_url.text().toStdString());
+		}
 
-        video_url_extracted(vurl);
-    }
+		video_url_extracted(vurl);
+	}
 
-    auto xml_url = get_comment_url(cid);
-    std::cout << "getting barrage from : " << xml_url << std::endl;
+	if (durls.isEmpty())
+	{
+		videourl_errored();
+	}
 
-    barrage_url_extracted(QString::fromStdString(xml_url));
+	auto xml_url = get_comment_url(cid);
+	std::cout << "getting barrage from : " << xml_url << std::endl;
+
+	barrage_url_extracted(QString::fromStdString(xml_url));
 }
