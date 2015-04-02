@@ -6,8 +6,7 @@
 #include "ffplayer_p.hpp"
 #include "qio2avio.hpp"
 
-#include "qdemuxer.hpp"
-#include "qvideodecoder.hpp"
+
 
 FFPlayerPrivate::FFPlayerPrivate(FFPlayer* q)
 	: q_ptr(q)
@@ -32,6 +31,24 @@ FFPlayer::FFPlayer()
 
 FFPlayer::~FFPlayer()
 {
+	d_ptr->decoder->stop();
+	d_ptr->demuxer->stop();
+
+	video_clocked_presenter_thread.quit();
+	video_decode_thread.quit();
+	audio_clocked_presenter_thread.quit();
+	audio_decode_thread.quit();
+	demux_thread.quit();
+
+	video_clocked_presenter_thread.wait();
+ 	video_decode_thread.wait();
+	audio_clocked_presenter_thread.wait();
+	audio_decode_thread.wait();
+	demux_thread.wait();
+
+	delete d_func()->decoder;
+	delete d_func()->demuxer;
+
     delete d_ptr;
 }
 
@@ -69,23 +86,23 @@ void FFPlayer::play(std::string url)
 
 	// 创建 demux 对象.
 
-	auto demuxer = new QDemuxer(this);
- 	auto vdecoder = new QVDecoder(this, video_index);
+	d_func()->demuxer = new QDemuxer(this);
+ 	d_func()->decoder = new QVDecoder(this, video_index);
 
-	demuxer->moveToThread(&demux_thread);
-	vdecoder->moveToThread(&video_decode_thread);
+	d_func()->demuxer->moveToThread(&demux_thread);
+	d_func()->decoder->moveToThread(&video_decode_thread);
 
-	connect(demuxer, SIGNAL(frame_readed(AVPacket*)), vdecoder, SLOT(put_one_frame(AVPacket*)), Qt::BlockingQueuedConnection);
+	connect(d_func()->demuxer, SIGNAL(frame_readed(AVPacket*)), d_func()->decoder, SLOT(put_one_frame(AVPacket*)), Qt::BlockingQueuedConnection);
 
-	connect(vdecoder, SIGNAL(videoframe_decoded(const QVideoFrame&)), this, SLOT(render_frame(const QVideoFrame&)), Qt::BlockingQueuedConnection);
+	connect(d_func()->decoder, SIGNAL(videoframe_decoded(const QVideoFrame&)), this, SLOT(render_frame(const QVideoFrame&)));//, Qt::BlockingQueuedConnection);
 
-	demuxer->start();
+	d_func()->demuxer->start();
 }
 
 void FFPlayer::render_frame(const QVideoFrame&f)
 {
-	if (m_vout)
-		m_vout->present(f);
+// 	if (m_vout)
+// 		m_vout->present(f);
 // 	if (m_vout2)
 // 		m_vout2->present(f);
 }

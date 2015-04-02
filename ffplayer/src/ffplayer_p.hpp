@@ -5,6 +5,9 @@
 #include <memory>
 #include "ffmpeg.hpp"
 
+#include "qdemuxer.hpp"
+#include "qvideodecoder.hpp"
+
 class FFPlayer;
 class FFPlayerPrivate
 {
@@ -26,4 +29,6 @@ protected:
 	char buffer[1024*1024*64];
 private:
 
+	QDemuxer* demuxer;
+	QVDecoder* decoder;
 };

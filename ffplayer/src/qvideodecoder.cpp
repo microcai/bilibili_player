@@ -1,6 +1,7 @@
 
 #include "qvideodecoder.hpp"
 #include "ffmpeg.hpp"
+#include "ffplayer_p.hpp"
 
 #include <va/va.h>
 #include <va/va_x11.h>
@@ -36,27 +37,6 @@ struct hwdec_profile_entry {
 // };
 //
 
-void QVDecoder::decode_one_frame()
-{
-	int got_picture = 0;
-
-	AVFrame* current_video_frame = av_frame_alloc();
-
-	avcodec_decode_video2(codec_context,current_video_frame, &got_picture, &current_packet);
-	current_video_frame->pts = current_packet.pts;
-
-
-	if (got_picture)
-	{
-		// 显示这一 frame 吧？
-		frame_decoded(current_video_frame);
-	}else
-	{
-		av_frame_free(&current_video_frame);
-	}
-
-	av_packet_unref(&current_packet);
-}
 
 struct QAVframeBuffer : public QAbstractPlanarVideoBuffer
 {
@@ -101,15 +81,45 @@ struct QAVframeBuffer : public QAbstractPlanarVideoBuffer
 	AVFrame* frame;
 };
 
+void QVDecoder::decode_one_frame(AVPacket* current_packet)
+{
+	std::shared_ptr<int> auto_exit((int*)0,[current_packet](void*)
+	{
+		av_free_packet(current_packet);
+		delete current_packet;
+
+	});
+
+	if(m_stop)
+	{
+		return;
+	}
+
+	int got_picture = 0;
+
+	AVFrame* current_video_frame = av_frame_alloc();
+
+	avcodec_decode_video2(codec_context, current_video_frame, &got_picture, current_packet);
+	current_video_frame->pts = current_packet->pts;
+
+	if (got_picture)
+	{
+		// 显示这一 frame 吧？
+		frame_decoded(current_video_frame);
+	}else
+	{
+		av_frame_free(&current_video_frame);
+	}
+}
+
 void QVDecoder::slot_frame_decoded(AVFrame* avframe)
 {
+	if(m_stop)
+		return;
 	// 构造 QVideoFrame
 	int frame_data_size = 0;
 
-
-
 	QSize frame_size(avframe->width, avframe->height);
-
 
 	QVideoFrame current_frame(new QAVframeBuffer(avframe), frame_size, QVideoFrame::Format_YUV420P);
 
@@ -121,14 +131,54 @@ void QVDecoder::slot_frame_decoded(AVFrame* avframe)
 
 void QVDecoder::put_one_frame(AVPacket* src)
 {
+	if(m_stop)
+		return;
+
 	if ( src->stream_index == video_index)
 	{
-		av_init_packet(&current_packet);
-		av_packet_ref(&current_packet, src);
+		AVPacket * current_packet = new AVPacket;
+		av_init_packet(current_packet);
+		av_copy_packet(current_packet, src);
 
-		QTimer::singleShot(0, this, SLOT(decode_one_frame()));
+ 		do_decode_one_frame(current_packet);
 	}
 	return;
+}
+
+void QVDecoder::stop()
+{
+	m_stop = true;
+}
+
+QVDecoder::QVDecoder(FFPlayer* _parent, int _video_index)
+	: video_index(_video_index)
+	, parent(_parent)
+{
+	av_init_packet(&current_packet);
+
+	connect(this, SIGNAL(frame_decoded(AVFrame*)), this, SLOT(slot_frame_decoded(AVFrame*)));
+	connect(this, SIGNAL(do_decode_one_frame(AVPacket*)), this, SLOT(decode_one_frame(AVPacket*)));
+
+	videostream = parent->d_ptr->avformat_ctx.get()->streams[video_index];
+
+	codec_context = videostream->codec;
+
+	codec_id = codec_context->codec_id;
+
+	if (0) // (codec_id == AV_CODEC_ID_H264)
+	{
+
+		open_hw_accel_codec(codec_id);
+
+	}else{
+		codec = avcodec_find_decoder(codec_id);
+		avcodec_open2(codec_context, codec, NULL);
+	}
+}
+
+QVDecoder::~QVDecoder()
+{
+	avcodec_close(codec_context);
 }
 
 void QVDecoder::open_hw_accel_codec(AVCodecID codec_id)
@@ -153,32 +203,4 @@ void QVDecoder::open_hw_accel_codec(AVCodecID codec_id)
 //
 
 	codec_context->hwaccel_context = &m_va_context;
-}
-
-QVDecoder::QVDecoder(FFPlayer* _parent, int _video_index)
-	: video_index(_video_index)
-	, parent(_parent)
-{
-	connect(this, SIGNAL(frame_decoded(AVFrame*)), this, SLOT(slot_frame_decoded(AVFrame*)));
-
-	videostream = parent->d_ptr->avformat_ctx.get()->streams[video_index];
-
-	codec_context = videostream->codec;
-
-	codec_id = codec_context->codec_id;
-
-	if (0) // (codec_id == AV_CODEC_ID_H264)
-	{
-
-		open_hw_accel_codec(codec_id);
-
-	}else{
-		codec = avcodec_find_decoder(codec_id);
-		avcodec_open2(codec_context, codec, NULL);
-	}
-}
-
-QVDecoder::~QVDecoder()
-{
-	avcodec_close(codec_context);
 }

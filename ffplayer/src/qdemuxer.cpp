@@ -2,7 +2,7 @@
 #include "qdemuxer.hpp"
 
 #include "ffmpeg.hpp"
-
+#include "ffplayer_p.hpp"
 
 Q_DECLARE_OPAQUE_POINTER(AVPacket*);
 
@@ -12,6 +12,12 @@ QDemuxer::QDemuxer(FFPlayer* _parent)
 	connect(this, SIGNAL(start()), this, SLOT(slot_start()));
 	qRegisterMetaType<AVPacket*>("AVPacket*");
 }
+
+void QDemuxer::stop()
+{
+	m_stop = true;
+}
+
 
 void QDemuxer::slot_start()
 {
@@ -29,7 +35,8 @@ void QDemuxer::read_one_frame()
 	av_init_packet(&pkt);
 	av_read_frame(avformat_ctx, &pkt);
 
-	QTimer::singleShot(0, this, SLOT(read_one_frame()));
+	if (!m_stop)
+		QTimer::singleShot(0, this, SLOT(read_one_frame()));
 
 	frame_readed(&pkt);
 }
