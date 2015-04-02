@@ -3,9 +3,7 @@
 
 #include <QIODevice>
 
-extern "C" {
-#include <libavformat/avio.h>
-}
+#include "ffmpeg.hpp"
 
 // Qt 的 io 转换到 ffmepg 的 IO
 struct QIO2AVIO

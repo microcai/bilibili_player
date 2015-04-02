@@ -6,6 +6,7 @@
 #include <QMediaPlaylist>
 #include <QMediaPlayer>
 #include <QGraphicsItem>
+#include <QGraphicsVideoItem>
 
 class FFPlayerPrivate;
 
@@ -18,10 +19,15 @@ public:
 
 	// FFPlayer take owner ship of input
 	void start_decode(QIODevice* input);
-// 	void setVideoOutput(QAbstractVideoSurface*);
-	void setVideoOutput(QGraphicsItem*){}
+	void setVideoOutput(QAbstractVideoSurface* v){
+		m_vout = v;
+	}
 
-	void play();
+	void setVideoOutput(QGraphicsVideoItem* v){
+		m_vout2 = v;
+	}
+
+	Q_SLOT void play();
 	void stop(){}
 	void pause(){}
 	QMediaPlaylist * playlist() const {return const_cast<QMediaPlaylist*>(m_playlist);}
@@ -34,8 +40,12 @@ public:
 
 	QMediaPlayer::State state() const {}
 
-private:
     class FFPlayerPrivate* const d_ptr;
+private:
+
+	Q_SLOT void render_frame(const QVideoFrame&);
+
+private:
     Q_DECLARE_PRIVATE(FFPlayer)
 
 	QMediaPlaylist* m_playlist;
@@ -51,6 +61,7 @@ private:
 	// 这些个线程用来读取
 	QThread demux_thread;
 
-	QAbstractVideoSurface* m_vout;
+	QAbstractVideoSurface* m_vout = 0;
+	QGraphicsVideoItem* m_vout2 = 0;
 };
 

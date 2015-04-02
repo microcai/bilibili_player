@@ -47,6 +47,9 @@ pkg_check_modules(LIBASS REQUIRED libass)
 
 pkg_check_modules(FFMPEG REQUIRED libavformat libavcodec libavfilter libavutil libavresample libavdevice)
 
+pkg_check_modules(LIBVA REQUIRED libva-x11 libva)
+
+
 find_package(KF5WindowSystem)
 
 include_directories(${OPENSSL_INCLUDE_DIR})
