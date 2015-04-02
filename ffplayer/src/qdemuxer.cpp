@@ -29,14 +29,21 @@ void QDemuxer::slot_start()
 
 void QDemuxer::read_one_frame()
 {
+	if (m_stop)
+		return;
 
 	auto avformat_ctx = parent->d_ptr->avformat_ctx.get();
 
 	av_init_packet(&pkt);
-	av_read_frame(avformat_ctx, &pkt);
-
-	if (!m_stop)
+	if (av_read_frame(avformat_ctx, &pkt) ==0)
+	{
 		QTimer::singleShot(0, this, SLOT(read_one_frame()));
+		frame_readed(&pkt);
+	}
+	else
+	{
+		// EOF
+	}
 
-	frame_readed(&pkt);
+	av_free_packet(&pkt);
 }

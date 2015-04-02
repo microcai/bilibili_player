@@ -157,8 +157,6 @@ void BPlayer::start_play()
 
 	connect(play_list(), SIGNAL(currentIndexChanged(int)), this, SLOT(slot_mediaChanged(int)));
 
-	std::cout << "playing: " << play_list()->currentMedia().canonicalUrl().toDisplayString().toStdString() << std::endl;
-
 	QShortcut* shortcut = new QShortcut(QKeySequence(QKeySequence::FullScreen), this);
 	connect(shortcut, SIGNAL(activated()), this, SLOT(toggle_full_screen_mode()));
 	shortcut = new QShortcut(QKeySequence("f"), this);

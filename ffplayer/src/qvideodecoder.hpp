@@ -1,6 +1,7 @@
 
 #pragma once
 
+#include <memory>
 #include <QtCore>
 #include <QVideoFrame>
 #include "ffplayer.hpp"
@@ -36,8 +37,8 @@ protected:
 	vaapi_context m_va_context;
 
 private:
-	Q_SIGNAL void do_decode_one_frame(AVPacket*);
-	Q_SLOT void decode_one_frame(AVPacket*);
+	Q_SIGNAL void do_decode_one_frame(std::shared_ptr<AVPacket>);
+	Q_SLOT void decode_one_frame(std::shared_ptr<AVPacket>);
 	Q_SIGNAL void frame_decoded(AVFrame*);
 	Q_SLOT void slot_frame_decoded(AVFrame*);
 

@@ -81,15 +81,8 @@ struct QAVframeBuffer : public QAbstractPlanarVideoBuffer
 	AVFrame* frame;
 };
 
-void QVDecoder::decode_one_frame(AVPacket* current_packet)
+void QVDecoder::decode_one_frame(std::shared_ptr<AVPacket> current_packet)
 {
-	std::shared_ptr<int> auto_exit((int*)0,[current_packet](void*)
-	{
-		av_free_packet(current_packet);
-		delete current_packet;
-
-	});
-
 	if(m_stop)
 	{
 		return;
@@ -99,7 +92,7 @@ void QVDecoder::decode_one_frame(AVPacket* current_packet)
 
 	AVFrame* current_video_frame = av_frame_alloc();
 
-	avcodec_decode_video2(codec_context, current_video_frame, &got_picture, current_packet);
+	avcodec_decode_video2(codec_context, current_video_frame, &got_picture, current_packet.get());
 	current_video_frame->pts = current_packet->pts;
 
 	if (got_picture)
@@ -136,9 +129,12 @@ void QVDecoder::put_one_frame(AVPacket* src)
 
 	if ( src->stream_index == video_index)
 	{
-		AVPacket * current_packet = new AVPacket;
-		av_init_packet(current_packet);
-		av_copy_packet(current_packet, src);
+		std::shared_ptr<AVPacket> current_packet(new AVPacket, [](AVPacket*p){
+			av_free_packet(p);
+			delete p;
+		});
+		av_init_packet(current_packet.get());
+		av_copy_packet(current_packet.get(), src);
 
  		do_decode_one_frame(current_packet);
 	}
@@ -157,7 +153,7 @@ QVDecoder::QVDecoder(FFPlayer* _parent, int _video_index)
 	av_init_packet(&current_packet);
 
 	connect(this, SIGNAL(frame_decoded(AVFrame*)), this, SLOT(slot_frame_decoded(AVFrame*)));
-	connect(this, SIGNAL(do_decode_one_frame(AVPacket*)), this, SLOT(decode_one_frame(AVPacket*)));
+	connect(this, SIGNAL(do_decode_one_frame(std::shared_ptr<AVPacket>)), this, SLOT(decode_one_frame(std::shared_ptr<AVPacket>)));
 
 	videostream = parent->d_ptr->avformat_ctx.get()->streams[video_index];
 

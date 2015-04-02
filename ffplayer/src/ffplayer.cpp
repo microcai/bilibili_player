@@ -101,8 +101,8 @@ void FFPlayer::play(std::string url)
 
 void FFPlayer::render_frame(const QVideoFrame&f)
 {
-// 	if (m_vout)
-// 		m_vout->present(f);
+	if (m_vout)
+		m_vout->present(f);
 // 	if (m_vout2)
 // 		m_vout2->present(f);
 }
@@ -115,7 +115,6 @@ void FFPlayer::play()
 	m_playlist->setCurrentIndex(0);
 
 	auto url = m_playlist->currentMedia().canonicalUrl().toString().toStdString();
-
 
 	play(url);
 
