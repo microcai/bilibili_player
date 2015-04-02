@@ -49,8 +49,6 @@ void BiliBiliRes::extract_aid_cid_stuff()
 {
 	QString real_player_page_data = current_reply->readAll();
 
-	qDebug() << real_player_page_data;
-
 	std::string real_player_page = real_player_page_data.toStdString();
 
 	// extract aid and cid from url

@@ -35,6 +35,9 @@ endif()
 
 target_link_libraries(bilibili_player Box2D)
 
+target_link_libraries(bilibili_player ffplayer)
+
+
 install(TARGETS bilibili_player RUNTIME DESTINATION bin)
 
 

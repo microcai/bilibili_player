@@ -11,16 +11,20 @@ extern "C" {
 struct QIO2AVIO
 {
 public:
-    QIO2AVIO(QIODevice* qio);
+	QIO2AVIO(QIO2AVIO&&) = default;
+	QIO2AVIO& operator = (QIO2AVIO&&) = default;
+
+	QIO2AVIO(QIODevice* qio);
     virtual ~QIO2AVIO();
 
+	AVIOContext* avio_context()
+	{
+		return avio_ctx.get();
+	}
+
 private:
-	QIO2AVIO(QIO2AVIO&&);
 	QIO2AVIO(const QIO2AVIO&) = delete;
 	QIO2AVIO& operator = (const QIO2AVIO&) = delete;
-	QIO2AVIO& operator = (QIO2AVIO&&) = delete;
-
-	std::shared_ptr<AVIOContext> avio_ctx;
 
 protected:
 	// size of the buffer! 64MB for now
@@ -28,6 +32,7 @@ protected:
 	std::shared_ptr<unsigned char> m_buffer;
 
 	QIODevice* m_qio;
+	std::shared_ptr<AVIOContext> avio_ctx;
 
 private:
 
