@@ -1,5 +1,6 @@
 
 #include <QtCore>
+#include <QMediaService>
 
 #include "ffmpeg.hpp"
 #include "ffplayer.hpp"
@@ -13,10 +14,14 @@ FFPlayerPrivate::FFPlayerPrivate(FFPlayer* q)
 {
 	avcodec_register_all();
 	av_register_all();
+
+	avformat_network_init();
+
 }
 
 FFPlayerPrivate::~FFPlayerPrivate()
 {
+	avformat_network_deinit();
 }
 
 FFPlayer::FFPlayer()
@@ -65,7 +70,7 @@ int stream_index(enum AVMediaType type, AVFormatContext *ctx)
 
 void FFPlayer::play(std::string url)
 {
-	auto avformat_ctx = avformat_alloc_context();
+	AVFormatContext* avformat_ctx = nullptr;//avformat_alloc_context();
 
 	avformat_open_input(&avformat_ctx, url.c_str(), NULL, NULL);
 
@@ -94,17 +99,31 @@ void FFPlayer::play(std::string url)
 
 	connect(d_func()->demuxer, SIGNAL(frame_readed(AVPacket*)), d_func()->decoder, SLOT(put_one_frame(AVPacket*)), Qt::BlockingQueuedConnection);
 
-	connect(d_func()->decoder, SIGNAL(videoframe_decoded(const QVideoFrame&)), this, SLOT(render_frame(const QVideoFrame&)));//, Qt::BlockingQueuedConnection);
+	connect(d_func()->decoder, SIGNAL(videoframe_decoded(const QVideoFrame&)), this, SLOT(sync_frame(const QVideoFrame&)), Qt::BlockingQueuedConnection);
 
 	d_func()->demuxer->start();
+}
+
+
+void FFPlayer::sync_frame(const QVideoFrame&f)
+{
+	if (m_start_time.isNull())
+		m_start_time.start();
+
+	auto elapsed = m_start_time.elapsed();
+	auto startTime = f.startTime();
+
+	if ( elapsed < startTime)
+	{
+		QThread::msleep(startTime - elapsed);
+	}
+	render_frame(f);
 }
 
 void FFPlayer::render_frame(const QVideoFrame&f)
 {
 	if (m_vout)
 		m_vout->present(f);
-// 	if (m_vout2)
-// 		m_vout2->present(f);
 }
 
 
@@ -143,10 +162,4 @@ void FFPlayer::start_decode(QIODevice* input)
 	avformat_find_stream_info(avformat_ctx, NULL);
 
 	av_dump_format(avformat_ctx, 0, NULL, 0);
-
-// 	avpk
-	AVPacket pkt;
-	av_read_frame(avformat_ctx,&pkt);
-
-// 	avcodec_decode_video2(avformat_ctx, &pkt, );
 }

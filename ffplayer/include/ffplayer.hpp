@@ -44,6 +44,7 @@ public:
 private:
 
 	Q_SLOT void render_frame(const QVideoFrame&);
+	Q_SLOT void sync_frame(const QVideoFrame&);
 
 private:
     Q_DECLARE_PRIVATE(FFPlayer)
@@ -63,5 +64,8 @@ private:
 
 	QAbstractVideoSurface* m_vout = 0;
 	QGraphicsVideoItem* m_vout2 = 0;
+
+	QTimer m_av_sync_clock;
+	QTime m_start_time;
 };
 
