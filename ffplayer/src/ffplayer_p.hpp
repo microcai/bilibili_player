@@ -7,6 +7,8 @@
 
 #include "qdemuxer.hpp"
 #include "qvideodecoder.hpp"
+#include "qvideosync.hpp"
+#include "qaudiodecoder.hpp"
 
 class FFPlayer;
 class FFPlayerPrivate
@@ -30,5 +32,7 @@ protected:
 private:
 
 	QDemuxer* demuxer;
-	QVDecoder* decoder;
+	QVDecoder* vdecoder;
+	QADecoder* adecoder;
+	QAudioVideoSync* avsync;
 };

@@ -9,6 +9,10 @@
 #include <QGraphicsVideoItem>
 
 class FFPlayerPrivate;
+class QDemuxer;
+class QVDecoder;
+class QAudioVideoSync;
+class QADecoder;
 
 class FFPlayer : public QObject
 {
@@ -40,32 +44,26 @@ public:
 
 	QMediaPlayer::State state() const {}
 
-    class FFPlayerPrivate* const d_ptr;
 private:
 
 	Q_SLOT void render_frame(const QVideoFrame&);
-	Q_SLOT void sync_frame(const QVideoFrame&);
 
 private:
+    class FFPlayerPrivate* const d_ptr;
     Q_DECLARE_PRIVATE(FFPlayer)
+	friend class QDemuxer;
+	friend class QVDecoder;
+	friend class QADecoder;
+	friend class QAudioVideoSync;
+
+private:
 
 	QMediaPlaylist* m_playlist;
 
-	// 这些个线程并不是用来渲染视频，而是用来执行音视频同步.
-	QThread video_clocked_presenter_thread;
-	QThread audio_clocked_presenter_thread;
-
-	// 这些个线程用来解码
-	QThread video_decode_thread;
-	QThread audio_decode_thread;
-
-	// 这些个线程用来读取
+	// 这些个线程用来读取和解码
 	QThread demux_thread;
 
 	QAbstractVideoSurface* m_vout = 0;
 	QGraphicsVideoItem* m_vout2 = 0;
-
-	QTimer m_av_sync_clock;
-	QTime m_start_time;
 };
 

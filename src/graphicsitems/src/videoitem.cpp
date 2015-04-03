@@ -344,13 +344,15 @@ public:
 		};
 	}
 
-	void update_texture(const QVideoFrame& newframe)
+	void update_texture(QVideoFrame& newframe)
 	{
 		if(!m_drawing_vexteres.isCreated())
 			m_drawing_vexteres.create();
 
+
 		if (newframe.handleType() == QAbstractVideoBuffer::NoHandle)
 		{
+			newframe.map(QAbstractVideoBuffer::ReadOnly);
 			switch(newframe.pixelFormat())
 			{
 				case QVideoFrame::Format_YUV444:
@@ -370,6 +372,7 @@ public:
 				default:
 					break;
 			}
+			newframe.unmap();
 		}
 		else if (newframe.handleType() == QAbstractVideoBuffer::GLTextureHandle)
 		{
@@ -432,7 +435,6 @@ private:
 VideoItem::VideoItem(QGraphicsItem *parent)
 	: QGraphicsItem(parent)
 	, imageFormat(QImage::Format_Invalid)
-	, framePainted(false)
 {
 	m_painter = nullptr;
 	updatePaintDevice = true;
@@ -483,14 +485,6 @@ void VideoItem::paintGL(QPainter* painter, QWidget* widget)
 
 	auto vsize = currentFrame.size();
 
-	if ( need_update_gltexture && currentFrame.map(QAbstractVideoBuffer::ReadOnly))
-	{
-		m_painter->update_texture(currentFrame);
-		currentFrame.unmap();
-
-		need_update_gltexture = false;
-	}
-
 	QMatrix4x4 gl_Projection;
 	QMatrix4x4 gl_Model = painter->combinedTransform();
 
@@ -536,6 +530,11 @@ void VideoItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option,
 
 	if (use_gl_painter)
 	{
+		if (need_update_gltexture)
+		{
+			need_update_gltexture = false;
+			m_painter->update_texture(currentFrame);
+		}
 		paintGL(painter, widget);
 	}
 	else
@@ -547,8 +546,28 @@ void VideoItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option,
 		}
 	}
 	painter->setTransform(oldTransform);
+}
 
-	framePainted = true;
+bool VideoItem::present(const QVideoFrame &frame)
+{
+	QMutexLocker l(&m_render_lock);
+
+	if (frame.isValid())
+		currentFrame = frame;
+
+	currentFrame.map(QAbstractVideoBuffer::ReadOnly);
+	currentFrame.unmap();
+
+	need_update_gltexture = true;
+
+	update();
+
+	if (!QAbstractVideoSurface::isActive())
+	{
+		setError(QAbstractVideoSurface::StoppedError);
+		return false;
+	}
+	return true;
 }
 
 QList<QVideoFrame::PixelFormat> VideoItem::supportedPixelFormats(
@@ -600,8 +619,6 @@ bool VideoItem::start(const QVideoSurfaceFormat &format)
 			imageSize = format.frameSize();
 		}
 
-		framePainted = true;
-
 		qDebug() << format.pixelFormat();
 
 		return QAbstractVideoSurface::start(format);
@@ -616,31 +633,5 @@ bool VideoItem::start(const QVideoSurfaceFormat &format)
 void VideoItem::stop()
 {
 	currentFrame = QVideoFrame();
-	framePainted = false;
-
 	QAbstractVideoSurface::stop();
 }
-
-bool VideoItem::present(const QVideoFrame &frame)
-{
-	QMutexLocker l(&m_render_lock);
-
-	if (frame.isValid())
-		currentFrame = frame;
-
-	need_update_gltexture = true;
-
-	if (!framePainted) {
-		if (!QAbstractVideoSurface::isActive())
-			setError(QAbstractVideoSurface::StoppedError);
-		return false;
-	} else {
-		framePainted = false;
-
-		update();
-
-		return true;
-	}
-}
-
-// #include "moc_videoitem.cpp"

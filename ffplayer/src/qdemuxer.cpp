@@ -38,6 +38,7 @@ void QDemuxer::read_one_frame()
 	if (av_read_frame(avformat_ctx, &pkt) ==0)
 	{
 		QTimer::singleShot(0, this, SLOT(read_one_frame()));
+		av_dup_packet(&pkt);
 		frame_readed(&pkt);
 	}
 	else

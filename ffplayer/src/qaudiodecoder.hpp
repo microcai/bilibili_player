@@ -3,20 +3,20 @@
 
 #include <memory>
 #include <QtCore>
-#include <QVideoFrame>
+#include <QAudioBuffer>
 #include "ffplayer.hpp"
 #include "ffmpeg.hpp"
 
-class QVDecoder : public QObject
+class QADecoder : public QObject
 {
 	Q_OBJECT
 public:
-	QVDecoder(FFPlayer* parent, int video_index);
+	QADecoder(FFPlayer* parent, int audio_index);
 
 	// emit to vidersync
-	Q_SIGNAL void videoframe_decoded(const QVideoFrame&);
+	Q_SIGNAL void audioframe_decoded(const QAudioBuffer&);
 
-	virtual ~QVDecoder();
+	virtual ~QADecoder();
 
 	void stop();
 
@@ -25,27 +25,20 @@ private:
 	Q_SLOT void put_one_frame(AVPacket*);
 
 	Q_SLOT void decode_one_frame(std::shared_ptr<AVPacket>);
-
 	Q_SLOT void avframe_decoded(std::shared_ptr<AVFrame>);
 
 private:
-	void open_hw_accel_codec(AVCodecID codec_id);
-
-private:
-	std::shared_ptr<AVFrame> current_video_frame;
-
+	std::shared_ptr<AVFrame> current_audio_frame;
 
 	bool m_stop = false;
 
 	FFPlayer* parent;
 
-	vaapi_context m_va_context;
-
-	int video_index;
+	int audio_index;
 	AVCodecID codec_id;
 
 	AVCodec* codec;
 
 	AVCodecContext* codec_context;
-	AVStream* videostream;
+	AVStream* audiostream;
 };

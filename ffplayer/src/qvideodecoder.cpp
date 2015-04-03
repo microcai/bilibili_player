@@ -42,20 +42,21 @@ struct QAVframeBuffer : public QAbstractPlanarVideoBuffer
 {
 	virtual int map(MapMode mode, int* numBytes, int bytesPerLine[4], uchar* data[4])
 	{
-		*numBytes = std::accumulate(std::begin(frame->linesize), std::end(frame->linesize),0);
 
-		for(int i=0; i<4;i++)
+		*numBytes = 0;
+
+		for(int i=0; i<3;i++)
 		{
 			bytesPerLine[i] = frame->linesize[i];
 			data[i] = frame->data[i];
-		}
 
+			*numBytes += frame->linesize[i] * frame->height;
+		}
 		return 3;
 	}
 
 	virtual ~QAVframeBuffer()
 	{
-		unmap();
 	}
 
 	virtual void unmap(){}
@@ -67,18 +68,17 @@ struct QAVframeBuffer : public QAbstractPlanarVideoBuffer
 
 	virtual void release()
 	{
-		av_frame_free(&frame);
 		delete this;
 	}
 
 	// take ownership
-	QAVframeBuffer(AVFrame* _f)
+	QAVframeBuffer(std::shared_ptr<AVFrame> _f)
 		 : QAbstractPlanarVideoBuffer(QAbstractVideoBuffer::NoHandle)
 	{
 		frame = _f;
 	}
 
-	AVFrame* frame;
+	std::shared_ptr<AVFrame> frame;
 };
 
 void QVDecoder::decode_one_frame(std::shared_ptr<AVPacket> current_packet)
@@ -90,22 +90,42 @@ void QVDecoder::decode_one_frame(std::shared_ptr<AVPacket> current_packet)
 
 	int got_picture = 0;
 
-	AVFrame* current_video_frame = av_frame_alloc();
 
-	avcodec_decode_video2(codec_context, current_video_frame, &got_picture, current_packet.get());
-	current_video_frame->pts = current_packet->pts;
+	auto pkt2 = *current_packet;
+
+	while (pkt2.size > 0 && !m_stop)
+	{
+		auto ret = avcodec_decode_video2(codec_context, current_video_frame.get(), &got_picture, &pkt2);
+		if (ret < 0)
+		{
+			printf("Video error while decoding one frame!!!\n");
+			break;
+		}
+		if (got_picture)
+			break;
+		pkt2.size -= ret;
+		pkt2.data += ret;
+	}
+
+// 	current_video_frame->pts = current_packet->pts;
 
 	if (got_picture)
 	{
 		// 显示这一 frame 吧？
-		frame_decoded(current_video_frame);
-	}else
-	{
-		av_frame_free(&current_video_frame);
+
+		std::shared_ptr<AVFrame> new_frame(av_frame_clone(current_video_frame.get()),
+			[](AVFrame*current_video_frame){av_frame_free(&current_video_frame);}
+		);
+
+		avframe_decoded(new_frame);
+
+		current_video_frame.reset(av_frame_alloc(),
+			[](AVFrame*current_video_frame){av_frame_free(&current_video_frame);}
+		);
 	}
 }
 
-void QVDecoder::slot_frame_decoded(AVFrame* avframe)
+void QVDecoder::avframe_decoded(std::shared_ptr<AVFrame> avframe)
 {
 	if(m_stop)
 		return;
@@ -116,9 +136,10 @@ void QVDecoder::slot_frame_decoded(AVFrame* avframe)
 
 	QVideoFrame current_frame(new QAVframeBuffer(avframe), frame_size, QVideoFrame::Format_YUV420P);
 
-	current_frame.setStartTime(avframe->pts * av_q2d(videostream->time_base) * 1000);
-	current_frame.setEndTime((avframe->pts + av_frame_get_pkt_duration(avframe)) * av_q2d(videostream->time_base) * 1000);
+	current_frame.setStartTime(av_frame_get_best_effort_timestamp(avframe.get()) * av_q2d(videostream->time_base) * 1000);
+	current_frame.setEndTime((av_frame_get_best_effort_timestamp(avframe.get()) + av_frame_get_pkt_duration(avframe.get())) * av_q2d(videostream->time_base) * 1000);
 
+	avframe.reset();
 	videoframe_decoded(current_frame);
 }
 
@@ -129,14 +150,15 @@ void QVDecoder::put_one_frame(AVPacket* src)
 
 	if ( src->stream_index == video_index)
 	{
-		std::shared_ptr<AVPacket> current_packet(new AVPacket, [](AVPacket*p){
-			av_free_packet(p);
-			delete p;
+		std::shared_ptr<AVPacket> current_packet(src, [](AVPacket*p){
+// 			av_free_packet(p);
+// 			delete p;
 		});
-		av_init_packet(current_packet.get());
-		av_copy_packet(current_packet.get(), src);
+// 		av_init_packet(current_packet.get());
+// 		av_copy_packet(current_packet.get(), src);
 
- 		do_decode_one_frame(current_packet);
+
+ 		decode_one_frame(current_packet);
 	}
 	return;
 }
@@ -150,10 +172,9 @@ QVDecoder::QVDecoder(FFPlayer* _parent, int _video_index)
 	: video_index(_video_index)
 	, parent(_parent)
 {
-	av_init_packet(&current_packet);
-
-	connect(this, SIGNAL(frame_decoded(AVFrame*)), this, SLOT(slot_frame_decoded(AVFrame*)));
-	connect(this, SIGNAL(do_decode_one_frame(std::shared_ptr<AVPacket>)), this, SLOT(decode_one_frame(std::shared_ptr<AVPacket>)));
+	current_video_frame.reset(av_frame_alloc(),
+		[](AVFrame*current_video_frame){av_frame_free(&current_video_frame);}
+	);
 
 	videostream = parent->d_ptr->avformat_ctx.get()->streams[video_index];
 

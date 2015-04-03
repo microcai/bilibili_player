@@ -5,7 +5,6 @@
 #include "ffplayer.hpp"
 #include "ffmpeg.hpp"
 
-class FFPlayerPrivate;
 class QDemuxer : public QObject
 {
 	Q_OBJECT
@@ -21,12 +20,11 @@ public Q_SLOTS:
 	void slot_start();
 	void stop();
 
-
+private Q_SLOTS:
+	void read_one_frame();
 
 private:
 	AVPacket pkt;
-
 	FFPlayer* parent;
 	bool m_stop = false;
-	Q_SLOT void read_one_frame();
 };
