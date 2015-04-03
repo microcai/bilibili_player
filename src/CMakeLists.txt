@@ -33,7 +33,7 @@ target_link_libraries(bilibili_player KF5::WindowSystem)
 target_compile_definitions(bilibili_player PRIVATE -DHAVE_KF5_WINDOWSYSTEM)
 endif()
 
-target_link_libraries(bilibili_player Box2D)
+#target_link_libraries(bilibili_player Box2D)
 
 install(TARGETS bilibili_player RUNTIME DESTINATION bin)
 
