@@ -31,7 +31,7 @@ else()
 endif()
 
 find_package(OpenSSL REQUIRED)
-find_package(Boost 1.55 COMPONENTS regex thread REQUIRED)
+find_package(Boost 1.55 COMPONENTS regex thread system timer REQUIRED)
 
 find_package(Bullet REQUIRED)
 

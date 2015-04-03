@@ -106,21 +106,53 @@ void FFPlayer::play(std::string url)
 	connect(d_func()->avsync, SIGNAL(render_frame(const QVideoFrame&)), this, SLOT(render_frame(const QVideoFrame&)), Qt::DirectConnection);
 	d_func()->demuxer->start();
 
+
+
 	connect(d_func()->avsync, SIGNAL(need_more_frame()), d_func()->demuxer, SLOT(slot_start()), Qt::QueuedConnection);
 
+	setProperty("MediaStatus", QMediaPlayer::MediaStatus::BufferingMedia);
+	mediaStatusChanged(QMediaPlayer::MediaStatus::BufferingMedia);
 
-	mediaStatusChanged(QMediaPlayer::MediaStatus::BufferedMedia);
-
-
-	connect(d_ptr->avsync, &QAudioVideoSync::nomore_frames, this, [this](){
-		mediaStatusChanged(QMediaPlayer::MediaStatus::BufferingMedia);
+	connect(d_ptr->avsync, &QAudioVideoSync::nomore_frames, this, [this]()
+	{
+		m_MediaStatus = QMediaPlayer::MediaStatus::BufferingMedia;
+		mediaStatusChanged(m_MediaStatus);
 	});
 
-	connect(d_ptr->avsync, &QAudioVideoSync::frames_ready, this, [this](){
-		mediaStatusChanged(QMediaPlayer::MediaStatus::BufferedMedia);
+	connect(d_ptr->avsync, &QAudioVideoSync::frames_ready, this, [this]()
+	{
+		if ( MediaStatus() != QMediaPlayer::MediaStatus::BufferedMedia)
+		{
+			m_MediaStatus = QMediaPlayer::MediaStatus::BufferedMedia;
+			mediaStatusChanged(m_MediaStatus);
+		}
 	});
 
+	connect(d_ptr->avsync, &QAudioVideoSync::suspended, this, [this](){
+		m_state = QMediaPlayer::PausedState;
+		stateChanged(m_state);
+	});
+
+	connect(d_ptr->avsync, &QAudioVideoSync::running, this, [this](){
+		m_state = QMediaPlayer::PlayingState;
+		stateChanged(m_state);
+	});
 }
+
+void FFPlayer::pause()
+{
+	if (m_state != QMediaPlayer::PlayingState)
+		return;
+	// 进入暂停功能
+	d_func()->avsync->pause();
+}
+
+
+QMediaPlayer::MediaStatus FFPlayer::MediaStatus() const
+{
+	return m_MediaStatus;
+}
+
 
 void FFPlayer::render_frame(const QVideoFrame&f)
 {
@@ -138,6 +170,8 @@ void FFPlayer::render_frame(const QVideoFrame&f)
 
 void FFPlayer::play()
 {
+	if ( m_state == QMediaPlayer::StoppedState)
+	{
 	// 从 play list 里获取url
 
 	m_playlist->setCurrentIndex(0);
@@ -154,6 +188,11 @@ void FFPlayer::play()
 	// 开始播放
 
 	// 播放过程中监控剩余时间，剩余时间剩下 30s 的时候开始缓冲下一个
+
+	}else if (m_state == QMediaPlayer::PausedState)
+	{
+		d_func()->avsync->resume();
+	}
 }
 
 void FFPlayer::start_decode(QIODevice* input)

@@ -11,6 +11,9 @@ QAudioVideoSync::QAudioVideoSync(FFPlayer* parent)
 	m_sync_thread = std::thread(std::bind(&QAudioVideoSync::sync_thread, this));
 
 	m_audio_out = nullptr;
+
+	connect(this, SIGNAL(pause()), this,  SLOT(do_pause()), Qt::QueuedConnection);
+	connect(this, SIGNAL(resume()), this,  SLOT(do_resume()), Qt::QueuedConnection);
 }
 
 QAudioVideoSync::~QAudioVideoSync()
@@ -23,6 +26,32 @@ void QAudioVideoSync::stop()
 	m_stop = true;
 }
 
+void QAudioVideoSync::do_resume()
+{
+	if(m_audio_out)
+		m_audio_out->resume();
+}
+
+void QAudioVideoSync::do_pause()
+{
+	if(m_audio_out)
+		m_audio_out->suspend();
+	play_time.stop();
+}
+
+void QAudioVideoSync::stateChanged(QAudio::State s)
+{
+	if (s == QAudio::SuspendedState)
+	{
+		suspended();
+	}
+	else if (s == QAudio::ActiveState)
+	{
+		running();
+		play_time.resume();
+	}
+}
+
 void QAudioVideoSync::sync_frame(const QVideoFrame& f)
 {
 	if (m_stop)
@@ -30,17 +59,13 @@ void QAudioVideoSync::sync_frame(const QVideoFrame& f)
 
 	QMutexLocker l(&m_lock);
 
-	if (play_time.isNull())
-		play_time.start();
-
 	m_list.push_back(f);
 }
 
 void QAudioVideoSync::sync_audio(const QAudioBuffer& a)
 {
 	{
-		if(play_time.isNull())
-			play_time.start();
+		play_time.start();
 
 		QMutexLocker l(&m_alock);
 
@@ -55,9 +80,14 @@ void QAudioVideoSync::sync_audio(const QAudioBuffer& a)
 
 			m_audio_out->start(this);
 
+			running();
+
 			played_audio_frame_time_stamp += a.startTime();// + play_time.elapsed();
-			play_time.restart();
+			play_time.start();
 			connect(m_audio_out, SIGNAL(notify()), this, SLOT(audio_play_buffer_notify()));
+
+			connect(m_audio_out, SIGNAL(stateChanged(QAudio::State)), this, SLOT(stateChanged(QAudio::State)));
+
 		}
 
 		// 挂入列队
@@ -124,7 +154,7 @@ qint64 QAudioVideoSync::readDataUnlocked(char* data, qint64 maxlen)
 
 
 		auto audio_time_in_buffer = 1000.0 * (1.0 - ( (double) m_audio_out->bytesFree() / (double) m_audio_out->bufferSize()));
-		play_time.restart();
+		play_time.start();
 
 // 		played_audio_frame_time_stamp -= 1000;
 // 		played_audio_frame_time_stamp -= audio_time_in_buffer;
@@ -200,7 +230,7 @@ void QAudioVideoSync::sync_thread()
 
 		QMutexLocker l(&m_ptslock);
 
-		auto elapsed = played_audio_frame_time_stamp + play_time.elapsed() + base_shift;
+		auto elapsed = played_audio_frame_time_stamp + play_time.elapsed().wall/1000000 + base_shift;
 
 // 		qDebug() << "now play this videoframe pts: " << f.startTime() << " (" << elapsed << ") ";
 
@@ -212,7 +242,7 @@ void QAudioVideoSync::sync_thread()
 			QThread::msleep(5);
 			l.relock();
 
-			elapsed = played_audio_frame_time_stamp + play_time.elapsed() + base_shift;
+			elapsed = played_audio_frame_time_stamp + play_time.elapsed().wall/1000000 + base_shift;
 		}
 		}
 

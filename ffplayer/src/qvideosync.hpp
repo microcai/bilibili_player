@@ -10,6 +10,8 @@
 #include <QAudioBuffer>
 #include <QAudioOutput>
 
+#include <boost/timer/timer.hpp>
+
 #include "ffplayer.hpp"
 #include "ffmpeg.hpp"
 
@@ -24,16 +26,26 @@ public:
 
 	Q_SIGNAL void need_more_frame() const;
 
-	void stop();
+	Q_SIGNAL void pause();
+	Q_SIGNAL void resume();
+
+	Q_SLOT void stop();
 
 	Q_SIGNAL void nomore_frames() const;
 	Q_SIGNAL void frames_ready() const;
 
+	Q_SIGNAL void suspended() const;
+	Q_SIGNAL void running() const;
+
 private:
+	Q_SLOT void do_pause();
+	Q_SLOT void do_resume();
 	Q_SLOT void sync_frame(const QVideoFrame&);
 	Q_SLOT void sync_audio(const QAudioBuffer&);
 
 	Q_SLOT void audio_play_buffer_notify();
+
+    Q_SLOT void stateChanged(QAudio::State);
 
 
 	void sync_thread();
@@ -69,7 +81,7 @@ private:
 	qint64 m_tmp_buf_size = 0;
 
 	std::thread m_sync_thread;
-	QTime play_time;
+	boost::timer::cpu_timer play_time;
 
 	qint64 played_audio_frame_time_stamp = 0;
 };
