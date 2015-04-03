@@ -20,6 +20,10 @@ public:
 	QAudioVideoSync(FFPlayer* parent);
 	virtual ~QAudioVideoSync();
 
+	Q_SIGNAL void render_frame(const QVideoFrame&);
+
+	Q_SIGNAL void need_more_frame() const;
+
 	void stop();
 
 private:
@@ -28,7 +32,6 @@ private:
 
 	Q_SLOT void audio_play_buffer_notify();
 
-	Q_SIGNAL void render_frame(const QVideoFrame&);
 
 	void sync_thread();
 
@@ -48,9 +51,11 @@ private:
 
 	bool m_stop = false;
 
+	mutable QMutex m_ptslock;
+
+
 	mutable QMutex m_lock;
-	QWaitCondition m_cond_sync_to_decoder;
-	QWaitCondition m_cond_decoder_to_sync;
+
 	std::deque<QVideoFrame> m_list;
 
 
@@ -61,4 +66,7 @@ private:
 	qint64 m_tmp_buf_size = 0;
 
 	std::thread m_sync_thread;
+	QTime play_time;
+
+	qint64 played_audio_frame_time_stamp = 0;
 };

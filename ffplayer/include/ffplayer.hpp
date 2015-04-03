@@ -44,6 +44,11 @@ public:
 
 	QMediaPlayer::State state() const {}
 
+Q_SIGNALS:
+	void metaDataChanged(const QString & key, const QVariant & value);
+	void durationChanged(qint64 duration);
+	void positionChanged(qint64 position);
+
 private:
 
 	Q_SLOT void render_frame(const QVideoFrame&);
@@ -65,5 +70,6 @@ private:
 
 	QAbstractVideoSurface* m_vout = 0;
 	QGraphicsVideoItem* m_vout2 = 0;
+	QSize m_current_frame_size;
 };
 

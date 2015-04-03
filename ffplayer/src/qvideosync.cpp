@@ -29,28 +29,34 @@ void QAudioVideoSync::sync_frame(const QVideoFrame& f)
 		return;
 
 	QMutexLocker l(&m_lock);
-	m_list.push_back(f);
-	m_cond_decoder_to_sync.wakeAll();
 
-	while (m_list.size() >= 50)
-	{
-// 		sleep until render complete!
-		m_cond_sync_to_decoder.wait(&m_lock);
-	}
+	if (play_time.isNull())
+		play_time.start();
+
+	m_list.push_back(f);
 }
 
 void QAudioVideoSync::sync_audio(const QAudioBuffer& a)
 {
 	{
+		if(play_time.isNull())
+			play_time.start();
+
 		QMutexLocker l(&m_alock);
 
 		if(!m_audio_out)
 		{
 			m_audio_out = new QAudioOutput(a.format());
-			m_audio_out->setNotifyInterval(1);
+			m_audio_out->setNotifyInterval(2500);
 			QIODevice::open(QIODevice::ReadOnly);
+
+			// 使用 1000ms 的缓冲区
+			m_audio_out->setBufferSize(a.format().sampleRate());// * (a.format().sampleSize()/8));
+
 			m_audio_out->start(this);
 
+			played_audio_frame_time_stamp += a.startTime();// + play_time.elapsed();
+			play_time.restart();
 			connect(m_audio_out, SIGNAL(notify()), this, SLOT(audio_play_buffer_notify()));
 		}
 
@@ -67,7 +73,15 @@ qint64 QAudioVideoSync::bytesAvailable() const
 	QMutexLocker l(&m_alock);
 
 	if(m_audiobuf_list.empty())
+	{
+		Q_EMIT need_more_frame();
 		return 0;
+	}
+
+	if (m_audiobuf_list.size() < 5)
+		Q_EMIT need_more_frame();
+
+	return m_audiobuf_list.front().byteCount();
 
 	return std::accumulate(m_audiobuf_list.begin(), m_audiobuf_list.end(), (qint64)0, [](qint64 s, const QAudioBuffer& f){
 		return s + f.byteCount();
@@ -88,6 +102,9 @@ qint64 QAudioVideoSync::readData(char* data, qint64 maxlen)
 
 qint64 QAudioVideoSync::readDataUnlocked(char* data, qint64 maxlen)
 {
+	if (m_audiobuf_list.size() < 5)
+		Q_EMIT need_more_frame();
+
 	if(maxlen==0)
 		return 0;
 
@@ -95,24 +112,31 @@ qint64 QAudioVideoSync::readDataUnlocked(char* data, qint64 maxlen)
 	{
 		if(m_audiobuf_list.empty())
 		{
-			qDebug() << "return 0 for readData !!! might buffer underflow";
 			return 0;
 		}
 
-		QAudioBuffer f = m_audiobuf_list.front();
+		QMutexLocker l(&m_ptslock);
+		QAudioBuffer& f = m_audiobuf_list.front();
+		// 这样视频就自动同步到声音上了
+		played_audio_frame_time_stamp = f.startTime();// - 1000;
+
+
+		auto audio_time_in_buffer = 1000.0 * (1.0 - ( (double) m_audio_out->bytesFree() / (double) m_audio_out->bufferSize()));
+		play_time.restart();
+
+// 		played_audio_frame_time_stamp -= 1000;
+// 		played_audio_frame_time_stamp -= audio_time_in_buffer;
+// 		qDebug() << "now play this audioframe pts: " << played_audio_frame_time_stamp;
 
 		m_tmp_buf = f.constData<char>();
 		m_tmp_buf_size = f.byteCount();
 	}
 
+	QAudioBuffer& f = m_audiobuf_list.front();
+
 	if (m_tmp_buf_size)
 	{
 		auto copy_size = qMin(maxlen, m_tmp_buf_size);
-
-		if (copy_size < maxlen)
-		{
-			qDebug() << "copy_size < maxlen !!! might buffer underflow";
-		}
 
 		memcpy(data, m_tmp_buf, copy_size);
 
@@ -124,7 +148,7 @@ qint64 QAudioVideoSync::readDataUnlocked(char* data, qint64 maxlen)
 			m_audiobuf_list.pop_front();
 		}
 
-		return copy_size + readDataUnlocked(data+copy_size, maxlen - copy_size);
+		return copy_size + readDataUnlocked(data + copy_size, maxlen - copy_size);
 	}
 
 }
@@ -145,41 +169,50 @@ void QAudioVideoSync::sync_thread()
 		{
 			QMutexLocker l(&m_lock);
 
-			while(m_list.empty()){
-				m_cond_decoder_to_sync.wait(&m_lock);
+			while(m_list.empty())
+			{
+				Q_EMIT need_more_frame();
+				l.unlock();
+				QThread::msleep(500);
+				l.relock();
 			}
 
 			f = m_list.front();
 			m_list.pop_front();
+
+			if (m_list.size() < 5)
+				Q_EMIT need_more_frame();
 		}
 
+		double base_shift = 0.0;
 
 		// 接着同步到时间点
-		auto elapsed = 0;
+		{
 
-		if (m_audio_out)
-		{
-			elapsed = m_audio_out->processedUSecs() / 1000;
-		}else
-		{
-			elapsed = f.startTime();
-		}
+		QMutexLocker l(&m_ptslock);
+
+		auto elapsed = played_audio_frame_time_stamp + play_time.elapsed() + base_shift;
+
+// 		qDebug() << "now play this videoframe pts: " << f.startTime() << " (" << elapsed << ") ";
 
 		auto startTime = f.startTime();
 
-		while ( elapsed < (startTime - 5))
+		while ( elapsed < (startTime - 1))
 		{
-			QThread::msleep(1);
+			l.unlock();
+			QThread::msleep(5);
+			l.relock();
 
-			elapsed = m_audio_out->elapsedUSecs() / 1000;
+			elapsed = played_audio_frame_time_stamp + play_time.elapsed() + base_shift;
 		}
+		}
+
 		render_frame(f);
-		m_cond_sync_to_decoder.wakeAll();
+
 	}
 
 	m_lock.lock();
 	m_list.clear();
-	m_cond_decoder_to_sync.wakeAll();
 	m_lock.unlock();
 	return;
 }

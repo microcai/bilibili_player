@@ -70,6 +70,8 @@ void FFPlayer::play(std::string url)
 
 	av_dump_format(avformat_ctx, 0, NULL, 0);
 
+	Q_EMIT durationChanged(avformat_ctx->duration * 1000 / AV_TIME_BASE);
+
 	// 获取 video index 和 audio index
 
 	int video_index, audio_index;
@@ -89,6 +91,7 @@ void FFPlayer::play(std::string url)
 	d_func()->demuxer->moveToThread(&demux_thread);
 	d_func()->vdecoder->moveToThread(&demux_thread);
 	d_func()->adecoder->moveToThread(&demux_thread);
+	d_func()->avsync->moveToThread(&demux_thread);
 
 	connect(d_func()->demuxer, SIGNAL(frame_readed(AVPacket*)), d_func()->vdecoder, SLOT(put_one_frame(AVPacket*)));
 	connect(d_func()->demuxer, SIGNAL(frame_readed(AVPacket*)), d_func()->adecoder, SLOT(put_one_frame(AVPacket*)));
@@ -98,10 +101,20 @@ void FFPlayer::play(std::string url)
 
 	connect(d_func()->avsync, SIGNAL(render_frame(const QVideoFrame&)), this, SLOT(render_frame(const QVideoFrame&)), Qt::DirectConnection);
 	d_func()->demuxer->start();
+
+	connect(d_func()->avsync, SIGNAL(need_more_frame()), d_func()->demuxer, SLOT(slot_start()), Qt::QueuedConnection);
 }
 
 void FFPlayer::render_frame(const QVideoFrame&f)
 {
+	if (m_current_frame_size != f.size())
+	{
+		m_current_frame_size = f.size();
+		metaDataChanged("Resolution", f.size());
+	}
+
+	positionChanged(f.startTime());
+
 	if (m_vout)
 		m_vout->present(f);
 }

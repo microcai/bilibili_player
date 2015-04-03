@@ -22,9 +22,17 @@ void QDemuxer::stop()
 void QDemuxer::slot_start()
 {
 	// 开始解码
-	QTimer::singleShot(0, this, SLOT(read_one_frame()));
+	QTimer::singleShot(0, this, SLOT(read_many_frame()));
 
 	pkt.pts = 0;
+}
+
+void QDemuxer::read_many_frame()
+{
+	for(int i = 0; i < 10; i++)
+	{
+		read_one_frame();
+	}
 }
 
 void QDemuxer::read_one_frame()
@@ -35,9 +43,8 @@ void QDemuxer::read_one_frame()
 	auto avformat_ctx = parent->d_ptr->avformat_ctx.get();
 
 	av_init_packet(&pkt);
-	if (av_read_frame(avformat_ctx, &pkt) ==0)
+	if (av_read_frame(avformat_ctx, &pkt) >=0)
 	{
-		QTimer::singleShot(0, this, SLOT(read_one_frame()));
 		av_dup_packet(&pkt);
 		frame_readed(&pkt);
 	}

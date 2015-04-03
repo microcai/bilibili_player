@@ -22,6 +22,7 @@ public Q_SLOTS:
 
 private Q_SLOTS:
 	void read_one_frame();
+	void read_many_frame();
 
 private:
 	AVPacket pkt;
