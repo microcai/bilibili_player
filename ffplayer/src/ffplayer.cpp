@@ -62,6 +62,8 @@ void FFPlayer::play(std::string url)
 {
 	AVFormatContext* avformat_ctx = nullptr;//avformat_alloc_context();
 
+	mediaStatusChanged(QMediaPlayer::MediaStatus::LoadingMedia);
+
 	avformat_open_input(&avformat_ctx, url.c_str(), NULL, NULL);
 
 	d_func()->avformat_ctx.reset(avformat_ctx, avformat_free_context);
@@ -69,6 +71,8 @@ void FFPlayer::play(std::string url)
 	avformat_find_stream_info(avformat_ctx, NULL);
 
 	av_dump_format(avformat_ctx, 0, NULL, 0);
+
+	mediaStatusChanged(QMediaPlayer::MediaStatus::LoadedMedia);
 
 	Q_EMIT durationChanged(avformat_ctx->duration * 1000 / AV_TIME_BASE);
 
@@ -103,6 +107,19 @@ void FFPlayer::play(std::string url)
 	d_func()->demuxer->start();
 
 	connect(d_func()->avsync, SIGNAL(need_more_frame()), d_func()->demuxer, SLOT(slot_start()), Qt::QueuedConnection);
+
+
+	mediaStatusChanged(QMediaPlayer::MediaStatus::BufferedMedia);
+
+
+	connect(d_ptr->avsync, &QAudioVideoSync::nomore_frames, this, [this](){
+		mediaStatusChanged(QMediaPlayer::MediaStatus::BufferingMedia);
+	});
+
+	connect(d_ptr->avsync, &QAudioVideoSync::frames_ready, this, [this](){
+		mediaStatusChanged(QMediaPlayer::MediaStatus::BufferedMedia);
+	});
+
 }
 
 void FFPlayer::render_frame(const QVideoFrame&f)

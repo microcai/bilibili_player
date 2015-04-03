@@ -26,6 +26,9 @@ public:
 
 	void stop();
 
+	Q_SIGNAL void nomore_frames() const;
+	Q_SIGNAL void frames_ready() const;
+
 private:
 	Q_SLOT void sync_frame(const QVideoFrame&);
 	Q_SLOT void sync_audio(const QAudioBuffer&);

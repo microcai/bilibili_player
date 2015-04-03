@@ -46,6 +46,7 @@ public:
 
 Q_SIGNALS:
 	void metaDataChanged(const QString & key, const QVariant & value);
+	void mediaStatusChanged(QMediaPlayer::MediaStatus status);
 	void durationChanged(qint64 duration);
 	void positionChanged(qint64 position);
 

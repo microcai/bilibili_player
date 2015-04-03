@@ -75,6 +75,7 @@ qint64 QAudioVideoSync::bytesAvailable() const
 	if(m_audiobuf_list.empty())
 	{
 		Q_EMIT need_more_frame();
+		Q_EMIT nomore_frames();
 		return 0;
 	}
 
@@ -112,6 +113,7 @@ qint64 QAudioVideoSync::readDataUnlocked(char* data, qint64 maxlen)
 	{
 		if(m_audiobuf_list.empty())
 		{
+			Q_EMIT nomore_frames();
 			return 0;
 		}
 
@@ -173,6 +175,7 @@ void QAudioVideoSync::sync_thread()
 			{
 				Q_EMIT need_more_frame();
 				l.unlock();
+				Q_EMIT nomore_frames();
 				QThread::msleep(500);
 				l.relock();
 			}
@@ -182,6 +185,12 @@ void QAudioVideoSync::sync_thread()
 
 			if (m_list.size() < 5)
 				Q_EMIT need_more_frame();
+		}
+
+		{
+			QMutexLocker l(&m_alock);
+			if (m_audiobuf_list.size() > 5)
+				Q_EMIT frames_ready();
 		}
 
 		double base_shift = 0.0;
