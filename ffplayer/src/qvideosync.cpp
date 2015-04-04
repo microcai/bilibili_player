@@ -276,7 +276,7 @@ void QAudioVideoSync::sync_thread()
 				Q_EMIT frames_ready();
 		}
 
-		double base_shift = -100;
+		double base_shift = -220;
 
 		// 接着同步到时间点
 		QMutexLocker lock_list(&m_ptslock);
