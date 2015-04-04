@@ -11,7 +11,6 @@ FFPlayerPrivate::FFPlayerPrivate(FFPlayer* q)
 	: q_ptr(q)
 	, vdecoder(q)
 	, avsync(q)
-	, adecoder(q)
 {
 	avcodec_register_all();
 	av_register_all();
@@ -65,6 +64,19 @@ FFPlayer::FFPlayer()
 		stateChanged(m_state);
 	});
 
+	auto finish_connect = connect(&d_ptr->avsync, &QAudioVideoSync::play_finished, this, [this]()
+	{
+		// play next url
+		auto next_index = m_playlist->currentIndex() + 1;
+
+		if (m_playlist->mediaCount() > next_index)
+		{
+			m_playlist->setCurrentIndex(next_index);
+			auto url = m_playlist->currentMedia().canonicalUrl().toString().toStdString();
+
+			play(url);
+		}
+	}, Qt::QueuedConnection);
 }
 
 FFPlayer::~FFPlayer()
@@ -91,6 +103,10 @@ static int stream_index(enum AVMediaType type, AVFormatContext *ctx)
 
 void FFPlayer::play(std::string url)
 {
+	d_ptr->avsync.stop();
+	d_ptr->adecoder.close_codec();
+	d_ptr->vdecoder.close_codec();
+
 	AVFormatContext* avformat_ctx = nullptr;//avformat_alloc_context();
 
 	mediaStatusChanged(QMediaPlayer::MediaStatus::LoadingMedia);
@@ -116,15 +132,16 @@ void FFPlayer::play(std::string url)
 
 	// 开启线程，正式进入播放
 
-	// 创建 demux 对象.
-
+	delete d_func()->demuxer;
 	d_func()->demuxer = new QDemuxer(this);
-//  	d_func()->vdecoder = new QVDecoder(this, video_index);
-//  	d_func()->adecoder = new QADecoder(this, audio_index);
-// 	d_func()->avsync = new QAudioVideoSync(this);
-
 	d_func()->demuxer->moveToThread(&demux_thread);
 
+	// 创建 demux 对象.
+	auto astream = avformat_ctx->streams[audio_index];
+	auto vstream = avformat_ctx->streams[video_index];
+
+	d_ptr->adecoder.init_decoder(astream, audio_index);
+	d_ptr->vdecoder.init_decoder(vstream, video_index);
 
 	connect(d_func()->demuxer, SIGNAL(frame_readed(AVPacket*)), &d_ptr->vdecoder, SLOT(put_one_frame(AVPacket*)));
 	connect(d_func()->demuxer, SIGNAL(frame_readed(AVPacket*)), &d_ptr->adecoder, SLOT(put_one_frame(AVPacket*)));
@@ -137,6 +154,13 @@ void FFPlayer::play(std::string url)
 
 	setProperty("MediaStatus", QMediaPlayer::MediaStatus::BufferingMedia);
 	mediaStatusChanged(QMediaPlayer::MediaStatus::BufferingMedia);
+
+	// delete the demuxer
+	connect(d_ptr->demuxer, SIGNAL(frame_done()), &d_ptr->avsync, SLOT(slot_frame_done()));
+	connect(d_ptr->demuxer, SIGNAL(frame_done()), d_ptr->demuxer, SLOT(deleteLater()));
+
+
+	d_ptr->avsync.start();
 }
 
 void FFPlayer::pause()

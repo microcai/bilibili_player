@@ -175,15 +175,17 @@ QVDecoder::QVDecoder(FFPlayer* _parent)
 	codec_context = nullptr;
 }
 
-void QVDecoder::init_codec(AVStream*, int video_index)
+void QVDecoder::init_decoder(AVStream* video_stream, int _video_index)
 {
+	video_index = _video_index;
+
 	close_codec();
 
 	current_video_frame.reset(av_frame_alloc(),
 		[](AVFrame*current_video_frame){av_frame_free(&current_video_frame);}
 	);
 
-	videostream = parent->d_ptr->avformat_ctx.get()->streams[video_index];
+	videostream = video_stream;
 
 	codec_context = videostream->codec;
 

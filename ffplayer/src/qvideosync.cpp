@@ -12,8 +12,6 @@ QAudioVideoSync::QAudioVideoSync(FFPlayer* parent)
 
 	connect(this, SIGNAL(pause()), this,  SLOT(do_pause()), Qt::BlockingQueuedConnection);
 	connect(this, SIGNAL(resume()), this,  SLOT(do_resume()), Qt::QueuedConnection);
-
-	start();
 }
 
 QAudioVideoSync::~QAudioVideoSync()
@@ -27,6 +25,8 @@ QAudioVideoSync::~QAudioVideoSync()
 
 void QAudioVideoSync::start()
 {
+	m_frame_eof = false;
+
 	Q_EMIT need_more_frame();
 
 	if(m_audio_out)
@@ -235,6 +235,12 @@ void QAudioVideoSync::audio_play_buffer_notify()
 	m_avsync_notify.wakeAll();
 }
 
+void QAudioVideoSync::slot_frame_done()
+{
+	// exit the video playback then ready
+	m_frame_eof = true;
+}
+
 void QAudioVideoSync::sync_thread()
 {
 	for(;!m_stop;)
@@ -246,6 +252,13 @@ void QAudioVideoSync::sync_thread()
 
 			while(m_list.empty())
 			{
+				if (m_frame_eof)
+				{
+					m_stop = true;
+					play_finished();
+					return;
+				}
+
 				Q_EMIT need_more_frame();
 				l.unlock();
 				Q_EMIT nomore_frames();
@@ -263,7 +276,7 @@ void QAudioVideoSync::sync_thread()
 				Q_EMIT frames_ready();
 		}
 
-		double base_shift = 0.0;
+		double base_shift = -100;
 
 		// 接着同步到时间点
 		QMutexLocker lock_list(&m_ptslock);

@@ -18,6 +18,8 @@ public:
 	Q_SIGNAL void setPosition(qint64 position);
 	Q_SIGNAL void frame_seeked();
 
+	Q_SIGNAL void frame_done();
+
 public Q_SLOTS:
 	void slot_start();
 	void stop();

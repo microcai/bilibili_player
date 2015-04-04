@@ -31,7 +31,7 @@ protected:
 	char buffer[1024*1024*64];
 private:
 
-	QDemuxer* demuxer;
+	QPointer<QDemuxer> demuxer;
 	QVDecoder vdecoder;
 	QADecoder adecoder;
 	QAudioVideoSync avsync;

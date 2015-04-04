@@ -140,6 +140,8 @@ int main(int argc, char* argv[])
 	cliparser.addOption({"force-aspect", "force video aspect", "16:9"});
 	cliparser.addOption({"ass", "load ass file", "file"});
 
+	cliparser.addPositionalArgument("bilibiliurl", "the url of the bilibili page", "bilibiliurl");
+
 	cliparser.process(app);
 
 	QSize native_screen_size;

@@ -11,7 +11,7 @@ class QADecoder : public QObject
 {
 	Q_OBJECT
 public:
-	QADecoder(FFPlayer* parent);
+	QADecoder();
 
 	// emit to vidersync
 	Q_SIGNAL void audioframe_decoded(const QAudioBuffer&);
@@ -21,6 +21,7 @@ public:
 	void stop();
 
 	Q_SLOT void init_decoder(AVStream* audio_strem, int audio_index);
+	Q_SLOT void close_codec();
 
 private:
 	// called by demuxer
@@ -28,7 +29,6 @@ private:
 
 	Q_SLOT void decode_one_frame(std::shared_ptr<AVPacket>);
 	Q_SLOT void avframe_decoded(std::shared_ptr<AVFrame>);
-	void close_codec();
 
 private:
 	std::shared_ptr<AVFrame> current_audio_frame;

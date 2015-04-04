@@ -39,6 +39,7 @@ public:
 	Q_SIGNAL void suspended() const;
 	Q_SIGNAL void running() const;
 
+	Q_SIGNAL void play_finished() const;
 	void start();
 
 private:
@@ -54,6 +55,9 @@ private:
 
     Q_SLOT void stateChanged(QAudio::State);
 
+	// tell syncer, that there is no more frames.
+	// exit on last frame!
+	Q_SLOT void slot_frame_done();
 
 	void sync_thread();
 
@@ -91,4 +95,5 @@ private:
 	boost::timer::cpu_timer play_time;
 
 	qint64 played_audio_frame_time_stamp = 0;
+	bool m_frame_eof;
 };

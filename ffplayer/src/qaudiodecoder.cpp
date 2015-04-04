@@ -158,22 +158,22 @@ void QADecoder::stop()
 	m_stop = true;
 }
 
-QADecoder::QADecoder(FFPlayer* _parent)
-	: parent(_parent)
+QADecoder::QADecoder()
 {
 	codec = nullptr;
 	codec_context = nullptr;
 }
 
-void QADecoder::init_decoder(AVStream* audio_strem, int audio_index)
+void QADecoder::init_decoder(AVStream* audio_strem, int _audio_index)
 {
+	audio_index = _audio_index;
 	close_codec();
 
 	current_audio_frame.reset(av_frame_alloc(),
 		[](AVFrame*current_video_frame){av_frame_free(&current_video_frame);}
 	);
 
-	audiostream = parent->d_ptr->avformat_ctx.get()->streams[audio_index];
+	audiostream = audio_strem;
 
 	codec_context = audiostream->codec;
 

@@ -18,7 +18,8 @@ public:
 
 	virtual ~QVDecoder();
 
-	Q_SLOT void init_codec(AVStream*, int video_index);
+	Q_SLOT void init_decoder(AVStream*, int video_index);
+	Q_SLOT void close_codec();
 
 	void stop();
 
@@ -32,7 +33,6 @@ private:
 
 private:
 	void open_hw_accel_codec(AVCodecID codec_id);
-	void close_codec();
 
 private:
 	std::shared_ptr<AVFrame> current_video_frame;

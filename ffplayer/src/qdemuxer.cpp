@@ -45,7 +45,8 @@ void QDemuxer::read_one_frame()
 	auto avformat_ctx = parent->d_ptr->avformat_ctx.get();
 
 	av_init_packet(&pkt);
-	if (av_read_frame(avformat_ctx, &pkt) >=0)
+	auto ret = av_read_frame(avformat_ctx, &pkt);
+	if ( ret >=0)
 	{
 		av_dup_packet(&pkt);
 		frame_readed(&pkt);
@@ -53,6 +54,7 @@ void QDemuxer::read_one_frame()
 	else
 	{
 		// EOF
+		frame_done();
 	}
 
 	av_free_packet(&pkt);
