@@ -28,7 +28,7 @@
 #include <QSurfaceFormat>
 #include <QResizeEvent>
 #include <QOpenGLFunctions>
-
+#include <QTime>
 #include <boost/regex.hpp>
 
 #include "bplayer.hpp"
@@ -244,10 +244,14 @@ void BPlayer::add_barrage(const Moving_Comment& c)
 		return;
 	}
 
+	QTime spend_time;
+
+	spend_time.start();
+
 	if ( lastY > vsize.height() * 0.22)
 	{
 		// 应该开始寻找替代位置
-		for (int guessY = 6; guessY < vsize.height() * 0.7 ; guessY++)
+		for (int guessY = 6; (guessY < vsize.height() * 0.7) && (spend_time.elapsed() < 500) ; guessY++)
 		{
 			QRect rect(vsize.width() - textWidth * 0.7, guessY, textWidth, danmu->boundingRect().height() + logicalDpiY() / 72.0 * 2);
 			auto items = QGraphicsView::items(rect, Qt::IntersectsItemShape);
@@ -355,8 +359,10 @@ void BPlayer::play_position_fast_forwarded(qreal time_stamp)
 
 void BPlayer::play_position_update(qreal time_stamp)
 {
+	QTime avoid_long_lock;
+	avoid_long_lock.start();
 	// 播放弹幕.
-	while (m_comment_pos != m_comments.end())
+	while ((avoid_long_lock.elapsed() < 2000) && m_comment_pos != m_comments.end())
 	{
 		const Moving_Comment & c = * m_comment_pos;
 		if (c.time_stamp < time_stamp)
@@ -370,6 +376,16 @@ void BPlayer::play_position_update(qreal time_stamp)
 				add_barrage(c);
 			}
 
+		}else
+			break;
+	}
+	
+	while ( m_comment_pos != m_comments.end())
+	{
+		const Moving_Comment & c = * m_comment_pos;
+		if (c.time_stamp < time_stamp)
+		{
+			m_comment_pos ++;
 		}else
 			break;
 	}

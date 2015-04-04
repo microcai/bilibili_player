@@ -62,7 +62,7 @@ void QDemuxer::do_setPosition(qint64 position)
 {
 	auto avformat_ctx = parent->d_ptr->avformat_ctx.get();
 
-	int64_t seek_target = 0;// position * AV_TIME_BASE;
+	int64_t seek_target = position * (AV_TIME_BASE/1000);
 	int64_t seek_min    = /*play->m_seek_rel > 0 ? seek_target - play->m_seek_rel + 2:*/ INT64_MIN;
 	int64_t seek_max    = /*play->m_seek_rel < 0 ? seek_target - play->m_seek_rel - 2:*/ INT64_MAX;
 
