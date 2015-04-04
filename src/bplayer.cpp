@@ -125,8 +125,8 @@ static Moving_Comments to_comments(const QDomDocument& barrage)
 	return m_comments;
 }
 
-BPlayer::BPlayer(bool use_gl)
-	: Player(0, use_gl)
+BPlayer::BPlayer(QWidget* parent)
+	: Player(parent)
 {
 }
 
@@ -379,7 +379,7 @@ void BPlayer::play_position_update(qreal time_stamp)
 		}else
 			break;
 	}
-	
+
 	while ( m_comment_pos != m_comments.end())
 	{
 		const Moving_Comment & c = * m_comment_pos;

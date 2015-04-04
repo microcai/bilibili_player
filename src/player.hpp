@@ -31,7 +31,7 @@ class Player : public QGraphicsView
 
 public:
 
-	Player(QWidget* parent = nullptr, bool use_opengl = true);
+	Player(QWidget* parent = nullptr);
 	~Player();
 
 	// the the play play list, if none set, return empty list
@@ -115,7 +115,6 @@ private:
 	// 播放控件们
 // 	QMediaPlayer m_player;
 	FFPlayer m_player;
-	QGraphicsVideoItem* m_video_item_no_gl;
 	VideoItem* m_video_item_gl;
 
 	QGraphicsItem* m_current_video_item;

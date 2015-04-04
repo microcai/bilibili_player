@@ -44,7 +44,7 @@ class BPlayer : public Player
     Q_PROPERTY(QString asspath MEMBER asspath )
 
 public:
-	BPlayer(bool use_gl = true);
+	BPlayer(QWidget * parent = nullptr);
 	virtual ~BPlayer();
 
 	double ZoomLevel() const

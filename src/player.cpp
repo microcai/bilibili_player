@@ -20,10 +20,9 @@ Player::~Player()
 }
 
 
-Player::Player(QWidget* parent, bool use_opengl)
+Player::Player(QWidget* parent)
 	: QGraphicsView(parent)
 	, m_video_item_gl(0)
-	, m_video_item_no_gl(0)
 {
 	setScene(&m_scene);
 	setFocusPolicy(Qt::NoFocus);
@@ -38,20 +37,12 @@ Player::Player(QWidget* parent, bool use_opengl)
 
 	m_scene.setBackgroundBrush(QBrush(QColor(0,0,0,255)));
 
-	if (use_opengl)
-	{
-		// 创建 opengl widget
-		auto glwidget = new QOpenGLWidget(this);
-		setViewport(glwidget);
-		m_current_video_item = m_video_item_gl = new VideoItem;
+	// 创建 opengl widget
+	auto glwidget = new QOpenGLWidget(this);
+	setViewport(glwidget);
+	m_current_video_item = m_video_item_gl = new VideoItem;
 
-		m_player.setVideoOutput(m_video_item_gl);
-	}
-	else
-	{
-		m_current_video_item = m_video_item_no_gl = new QGraphicsVideoItem;
-		m_player.setVideoOutput(m_video_item_no_gl);
-	}
+	m_player.setVideoOutput(m_video_item_gl);
 
 	QPalette Pal(palette());
 	Pal.setColor(QPalette::Background, QColor(0,0,0,255));
@@ -108,17 +99,10 @@ void Player::update_video_widget_size(QSizeF rectsize)
 	video_rect.moveCenter(scene()->sceneRect().center());
 
 	// 调整视频大小
-	if(m_video_item_gl)
-	{
-		m_video_item_gl->setSize(video_widget_size);
-	}
-	if(m_video_item_no_gl)
-	{
-		m_video_item_no_gl->setSize(video_widget_size);
-	}
+
+	m_video_item_gl->setSize(video_widget_size);
 
 	m_current_video_item->setPos(video_rect.topLeft());
-
 
 	if (m_ass_item)
 	{

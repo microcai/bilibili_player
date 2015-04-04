@@ -135,7 +135,6 @@ int main(int argc, char* argv[])
 	cliparser.addOption({"videourl", "alternative video url, useful for play local video file while still  be able to see danmaku", "uri"});
 	cliparser.addOption({"cid", "alternative method for specify bilibili url", "cid"});
 	cliparser.addOption({"ass", "load subtitle from this ass", "path"});
-	cliparser.addOption({"nogl", "do not using opengl to render the video and danmaku"});
 	cliparser.addOption({"no-minimalsize", "allow resize freely"});
 	cliparser.addOption({"force-aspect", "force video aspect", "16:9"});
 	cliparser.addOption({"ass", "load ass file", "file"});
@@ -193,16 +192,7 @@ int main(int argc, char* argv[])
 	QMediaPlaylist playlist;
 	playlist.setPlaybackMode(QMediaPlaylist::Sequential);
 
-	bool use_gl = true;
-
-	if (cliparser.isSet("nogl"))
-	{
-		use_gl = false;
-		if (cliparser.value("nogl") == "no")
-			use_gl = true;
-	}
-
-	BPlayer player(use_gl);
+	BPlayer player;
 	player.set_play_list(&playlist);
 
 	if (cliparser.isSet("use-bullet"))
