@@ -123,7 +123,6 @@ void QAudioVideoSync::sync_audio(const QAudioBuffer& a)
 		if(!m_audio_out)
 		{
 			m_audio_out = new QAudioOutput(a.format());
-			m_audio_out->setNotifyInterval(8);
 			QIODevice::open(QIODevice::ReadOnly);
 
 			// 使用 1000ms 的缓冲区
@@ -138,6 +137,7 @@ void QAudioVideoSync::sync_audio(const QAudioBuffer& a)
 			connect(m_audio_out, SIGNAL(notify()), this, SLOT(audio_play_buffer_notify()));
 
 			connect(m_audio_out, SIGNAL(stateChanged(QAudio::State)), this, SLOT(stateChanged(QAudio::State)));
+			m_audio_out->setNotifyInterval(1000/60.0);
 
 		}
 
@@ -310,7 +310,7 @@ void QAudioVideoSync::sync_thread()
 			{
 				return;
 			}
-			m_avsync_notify.wait(&m_lock, 5);
+			m_avsync_notify.wait(&m_lock, 500);
 			if (m_stop)
 			{
 				return;
