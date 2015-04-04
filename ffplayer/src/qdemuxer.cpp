@@ -9,7 +9,9 @@ Q_DECLARE_OPAQUE_POINTER(AVPacket*);
 QDemuxer::QDemuxer(FFPlayer* _parent)
 	: parent(_parent)
 {
-	connect(this, SIGNAL(start()), this, SLOT(slot_start()));
+	connect(this, SIGNAL(start()), this, SLOT(slot_start()), Qt::QueuedConnection);
+	connect(this, SIGNAL(setPosition(qint64)), this, SLOT(do_setPosition(qint64)), Qt::QueuedConnection);
+
 	qRegisterMetaType<AVPacket*>("AVPacket*");
 }
 
@@ -55,3 +57,24 @@ void QDemuxer::read_one_frame()
 
 	av_free_packet(&pkt);
 }
+
+void QDemuxer::do_setPosition(qint64 position)
+{
+	auto avformat_ctx = parent->d_ptr->avformat_ctx.get();
+
+	int64_t seek_target = 0;// position * AV_TIME_BASE;
+	int64_t seek_min    = /*play->m_seek_rel > 0 ? seek_target - play->m_seek_rel + 2:*/ INT64_MIN;
+	int64_t seek_max    = /*play->m_seek_rel < 0 ? seek_target - play->m_seek_rel - 2:*/ INT64_MAX;
+
+	int seek_flags = 0 & (~AVSEEK_FLAG_BYTE);
+
+	auto ret = avformat_seek_file(avformat_ctx, -1, seek_min, seek_target, seek_max, seek_flags);
+
+	if (ret <0)
+	{
+		qDebug() <<  "seek failed";
+	}
+
+	frame_seeked();
+}
+

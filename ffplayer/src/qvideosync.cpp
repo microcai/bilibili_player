@@ -8,22 +8,41 @@
 
 QAudioVideoSync::QAudioVideoSync(FFPlayer* parent)
 {
-	m_sync_thread = std::thread(std::bind(&QAudioVideoSync::sync_thread, this));
-
 	m_audio_out = nullptr;
 
-	connect(this, SIGNAL(pause()), this,  SLOT(do_pause()), Qt::QueuedConnection);
+	connect(this, SIGNAL(pause()), this,  SLOT(do_pause()), Qt::BlockingQueuedConnection);
 	connect(this, SIGNAL(resume()), this,  SLOT(do_resume()), Qt::QueuedConnection);
+
+	start();
 }
 
 QAudioVideoSync::~QAudioVideoSync()
 {
-	m_sync_thread.join();
+	if (m_sync_thread.joinable())
+		m_sync_thread.join();
+
+	if(m_audio_out)
+		delete m_audio_out;
+}
+
+void QAudioVideoSync::start()
+{
+	Q_EMIT need_more_frame();
+
+	if(m_audio_out)
+		m_audio_out->resume();
+
+	m_stop = false;
+	m_sync_thread = std::thread(std::bind(&QAudioVideoSync::sync_thread, this));
 }
 
 void QAudioVideoSync::stop()
 {
 	m_stop = true;
+
+	if (m_sync_thread.joinable())
+		m_sync_thread.join();
+	m_list.clear();
 }
 
 void QAudioVideoSync::do_resume()
@@ -36,20 +55,39 @@ void QAudioVideoSync::do_pause()
 {
 	if(m_audio_out)
 		m_audio_out->suspend();
-	play_time.stop();
+}
+
+void QAudioVideoSync::do_clear_queue()
+{
+	QMutexLocker l1(&m_lock);
+	QMutexLocker l2(&m_alock);
+
+	m_audiobuf_list.clear();
+	m_list.clear();
+
+	m_audio_out->suspend();
+	m_audio_out->reset();
 }
 
 void QAudioVideoSync::stateChanged(QAudio::State s)
 {
 	if (s == QAudio::SuspendedState)
 	{
+		play_time.stop();
 		suspended();
 	}
 	else if (s == QAudio::ActiveState)
 	{
-		running();
 		play_time.resume();
+		running();
 	}
+}
+
+void QAudioVideoSync::frame_seeked()
+{
+	QMutexLocker l1(&m_lock);
+
+	m_list.clear();
 }
 
 void QAudioVideoSync::sync_frame(const QVideoFrame& f)
@@ -58,6 +96,13 @@ void QAudioVideoSync::sync_frame(const QVideoFrame& f)
 		return;
 
 	QMutexLocker l(&m_lock);
+
+	if(!m_list.empty())
+	{
+		QVideoFrame& ff = m_list.back();
+		if ( f.startTime() < ff.startTime())
+			m_list.clear();
+	}
 
 	m_list.push_back(f);
 }
@@ -192,8 +237,6 @@ void QAudioVideoSync::audio_play_buffer_notify()
 
 void QAudioVideoSync::sync_thread()
 {
-	QVideoFrame f;
-
 	for(;!m_stop;)
 	{
 		// 读取
@@ -210,9 +253,6 @@ void QAudioVideoSync::sync_thread()
 				l.relock();
 			}
 
-			f = m_list.front();
-			m_list.pop_front();
-
 			if (m_list.size() < 5)
 				Q_EMIT need_more_frame();
 		}
@@ -226,27 +266,48 @@ void QAudioVideoSync::sync_thread()
 		double base_shift = 0.0;
 
 		// 接着同步到时间点
+		QMutexLocker lock_list(&m_ptslock);
+
 		{
 
-		QMutexLocker l(&m_ptslock);
+// 		QMutexLocker l(&m_ptslock);
 
 		auto elapsed = played_audio_frame_time_stamp + play_time.elapsed().wall/1000000 + base_shift;
 
 // 		qDebug() << "now play this videoframe pts: " << f.startTime() << " (" << elapsed << ") ";
 
-		auto startTime = f.startTime();
+		auto startTime = m_list.front().startTime();
 
 		while ( elapsed < (startTime - 1))
 		{
-			l.unlock();
+ 			if (m_stop)
+			{
+				return;
+			}
+
+// 			l.unlock();
+			lock_list.unlock();
 			QThread::msleep(5);
-			l.relock();
+			if (m_stop)
+			{
+				return;
+			}
+			lock_list.relock();
+// 			l.relock();
+
+			if (m_list.empty())
+				continue;
 
 			elapsed = played_audio_frame_time_stamp + play_time.elapsed().wall/1000000 + base_shift;
+
+			startTime = m_list.front().startTime();
 		}
 		}
 
-		render_frame(f);
+		render_frame(m_list.front());
+		m_list.pop_front();
+
+		lock_list.unlock();
 
 	}
 

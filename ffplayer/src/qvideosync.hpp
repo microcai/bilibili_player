@@ -31,15 +31,22 @@ public:
 
 	Q_SLOT void stop();
 
+	Q_SIGNAL void clear_queue();
+
 	Q_SIGNAL void nomore_frames() const;
 	Q_SIGNAL void frames_ready() const;
 
 	Q_SIGNAL void suspended() const;
 	Q_SIGNAL void running() const;
 
+	void start();
+
 private:
+	Q_SLOT void do_clear_queue();
 	Q_SLOT void do_pause();
 	Q_SLOT void do_resume();
+
+	Q_SLOT void frame_seeked();
 	Q_SLOT void sync_frame(const QVideoFrame&);
 	Q_SLOT void sync_audio(const QAudioBuffer&);
 
@@ -60,7 +67,7 @@ private:
 	qint64 bytesAvailable() const;
 
 private:
-	QAudioOutput* m_audio_out;
+	QPointer<QAudioOutput> m_audio_out;
 
 	QWaitCondition m_avsync_notify;
 

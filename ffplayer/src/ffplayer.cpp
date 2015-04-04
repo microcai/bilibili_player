@@ -110,6 +110,8 @@ void FFPlayer::play(std::string url)
 
 	connect(d_func()->avsync, SIGNAL(need_more_frame()), d_func()->demuxer, SLOT(slot_start()), Qt::QueuedConnection);
 
+	connect(d_ptr->demuxer, SIGNAL(frame_seeked()), d_ptr->avsync, SLOT(frame_seeked()));
+
 	setProperty("MediaStatus", QMediaPlayer::MediaStatus::BufferingMedia);
 	mediaStatusChanged(QMediaPlayer::MediaStatus::BufferingMedia);
 
@@ -147,6 +149,21 @@ void FFPlayer::pause()
 	d_func()->avsync->pause();
 }
 
+void FFPlayer::setPosition(qint64 position)
+{
+	// 忽略之
+	if (m_state != QMediaPlayer::PlayingState)
+		return;
+
+	// 先停止播放.
+	d_func()->avsync->stop();
+
+	// 接着快进
+	d_func()->demuxer->setPosition(position);
+	d_func()->avsync->clear_queue();
+
+	d_func()->avsync->start();
+}
 
 QMediaPlayer::MediaStatus FFPlayer::MediaStatus() const
 {

@@ -41,7 +41,7 @@ public:
 	QMediaPlaylist * playlist() const {return const_cast<QMediaPlaylist*>(m_playlist);}
 	void setPlaylist(QMediaPlaylist * playlist){ m_playlist = playlist;};
 
-	void setPosition(qint64 position){}
+	void setPosition(qint64 position);
 	void play(std::string url);
 
 	void setNotifyInterval(int milliSeconds){}
