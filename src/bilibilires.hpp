@@ -46,10 +46,11 @@ Q_SIGNALS:
 
 	void finished();
 
-private:
-Q_SIGNALS:
+	void videourl_errored();
+
 	void cid_extracted(QString);
 	void aid_extracted(QString);
+	void cid_extract_errored();
 
 private Q_SLOTS:
 

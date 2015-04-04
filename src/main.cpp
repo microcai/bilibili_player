@@ -133,11 +133,14 @@ int main(int argc, char* argv[])
 
 	cliparser.addOption({"use-bullet", "use bullet engine to manage danmaku"});
 	cliparser.addOption({"videourl", "alternative video url, useful for play local video file while still  be able to see danmaku", "uri"});
+	cliparser.addOption({"cid", "alternative method for specify bilibili url", "cid"});
 	cliparser.addOption({"ass", "load subtitle from this ass", "path"});
 	cliparser.addOption({"nogl", "do not using opengl to render the video and danmaku"});
 	cliparser.addOption({"no-minimalsize", "allow resize freely"});
 	cliparser.addOption({"force-aspect", "force video aspect", "16:9"});
 	cliparser.addOption({"ass", "load ass file", "file"});
+
+	cliparser.addPositionalArgument("bilibiliurl", "the url of the bilibili page", "bilibiliurl");
 
 	cliparser.process(app);
 
@@ -162,16 +165,29 @@ int main(int argc, char* argv[])
 	QString bilibili_url;
 	// argv[1] should by the url to play
 
-	if (cliparser.positionalArguments().size() >= 1)
+	BiliBiliRes* bilibili_res = nullptr;
+
+	if(!cliparser.isSet("cid"))
 	{
-		bilibili_url = cliparser.positionalArguments().at(0);
-		std::cerr << "play bilibili url: " << bilibili_url.toStdString() << std::endl;
+		if (cliparser.positionalArguments().size() >= 1)
+		{
+			bilibili_url = cliparser.positionalArguments().at(0);
+			std::cerr << "play bilibili url: " << bilibili_url.toStdString() << std::endl;
+
+			bilibili_res = new BiliBiliRes(bilibili_url.toStdString());
+
+		}else
+		{
+			std::cerr << "\n\n\n -- 必须要有 bilibili 地址哦！ -- \n 以下是帮助" << std::endl;
+
+			cliparser.showHelp(1);
+		}
 
 	}else
 	{
-		std::cerr << "\n\n\n -- 必须要有 bilibili 地址哦！ -- \n 以下是帮助" << std::endl;
+		bilibili_res = new BiliBiliRes("");
 
-		cliparser.showHelp(1);
+		bilibili_res->cid_extracted(cliparser.value("cid"));
 	}
 
 	QMediaPlaylist playlist;
@@ -211,7 +227,6 @@ int main(int argc, char* argv[])
 		player.set_subtitle(cliparser.value("ass"));
 	}
 
-	auto bilibili_res = new BiliBiliRes(bilibili_url.toStdString());
 
 	if (cliparser.isSet("videourl"))
 	{
@@ -233,6 +248,8 @@ int main(int argc, char* argv[])
 	QObject::connect(bilibili_res, SIGNAL(barrage_extracted(QDomDocument)), &player, SLOT(set_barrage_dom(QDomDocument)));
 	QObject::connect(bilibili_res, SIGNAL(finished()), &player, SLOT(start_play()));
 	QObject::connect(bilibili_res, SIGNAL(finished()), &player, SLOT(show()));
+
+	QObject::connect(bilibili_res, SIGNAL(videourl_errored()), &app, SLOT(quit()));
 
 	app.exec();
 

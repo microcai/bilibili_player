@@ -31,7 +31,7 @@ else()
 endif()
 
 find_package(OpenSSL REQUIRED)
-find_package(Boost 1.55 COMPONENTS regex thread REQUIRED)
+find_package(Boost 1.55 COMPONENTS regex thread system timer REQUIRED)
 
 find_package(Bullet REQUIRED)
 
@@ -45,6 +45,11 @@ set(BOX2D_BUILD_EXAMPLES OFF)
 
 pkg_check_modules(LIBASS REQUIRED libass)
 
+pkg_check_modules(FFMPEG REQUIRED libavformat libavcodec libavfilter libavutil libavresample libavdevice)
+
+pkg_check_modules(LIBVA REQUIRED libva-x11 libva)
+
+
 find_package(KF5WindowSystem)
 
 include_directories(${OPENSSL_INCLUDE_DIR})
@@ -56,6 +61,8 @@ link_directories    ( ${BULLET_LIBRARY_DIRS} )
 link_libraries(${OPENSSL_LIBRARIES} ${Boost_LIBRARIES} ${LIBASS_LDFLAGS} ${LIBASS_LIBRARIES})
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
+
+add_subdirectory(ffplayer/)
 
 add_subdirectory(src/)
 

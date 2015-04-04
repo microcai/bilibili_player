@@ -18,6 +18,8 @@
 #include "asssubtitlesitem.hpp"
 #include "defs.hpp"
 
+#include "ffplayer.hpp"
+
 class VideoItem;
 
 class PlayList;
@@ -111,7 +113,8 @@ private:
 	int _drag_positoin = -1;
 
 	// 播放控件们
-	QMediaPlayer m_player;
+// 	QMediaPlayer m_player;
+	FFPlayer m_player;
 	QGraphicsVideoItem* m_video_item_no_gl;
 	VideoItem* m_video_item_gl;
 

@@ -95,7 +95,6 @@ private:
 
 	QVideoFrame currentFrame;
 	bool need_update_gltexture;
-	bool framePainted;
 
 	VideoPainter * m_painter;
 	bool updatePaintDevice;
