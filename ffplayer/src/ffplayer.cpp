@@ -36,6 +36,17 @@ FFPlayer::FFPlayer()
 
 	connect(&d_ptr->avsync, SIGNAL(render_frame(const QVideoFrame&)), this, SLOT(render_frame(const QVideoFrame&)), Qt::DirectConnection);
 
+	connect(&d_ptr->avsync, &QAudioVideoSync::render_frame, this, [this](const QVideoFrame& f)
+	{
+		if (f.startTime() /1000.0  >= ((d_ptr->avformat_ctx->duration / (double)AV_TIME_BASE)) - 5 )
+		{
+			std::thread(&FFPlayer::preload_next_uri, this).detach();
+		}
+
+	}, Qt::DirectConnection);
+
+
+
 	connect(&d_ptr->vdecoder, SIGNAL(videoframe_decoded(const QVideoFrame&)), &d_ptr->avsync, SLOT(sync_frame(const QVideoFrame&)), Qt::DirectConnection);
 	connect(&d_ptr->adecoder, SIGNAL(audioframe_decoded(const QAudioBuffer&)), &d_ptr->avsync, SLOT(sync_audio(const QAudioBuffer&)), Qt::DirectConnection);
 
@@ -113,28 +124,38 @@ void FFPlayer::load(std::string url)
 	d_ptr->adecoder.close_codec();
 	d_ptr->vdecoder.close_codec();
 
-	AVFormatContext* avformat_ctx = nullptr;//avformat_alloc_context();
+	{
+	QMutexLocker l(&(d_func()->m_repload_mutex));
 
-	mediaStatusChanged(QMediaPlayer::MediaStatus::LoadingMedia);
+	if ( d_ptr->avformat_ctx_preloading_next)
+	{
+		d_ptr->avformat_ctx = std::move(d_ptr->avformat_ctx_preloading_next);
 
-	avformat_open_input(&avformat_ctx, url.c_str(), NULL, NULL);
+		qDebug() << "using preloaded flv";
+	}else
+	{
+		AVFormatContext* avformat_ctx = nullptr;//avformat_alloc_context();
 
-	d_func()->avformat_ctx.reset(avformat_ctx, avformat_free_context);
+		mediaStatusChanged(QMediaPlayer::MediaStatus::LoadingMedia);
 
-	avformat_find_stream_info(avformat_ctx, NULL);
+		avformat_open_input(&avformat_ctx, url.c_str(), NULL, NULL);
 
-	av_dump_format(avformat_ctx, 0, NULL, 0);
+		d_func()->avformat_ctx.reset(avformat_ctx, avformat_free_context);
+
+		avformat_find_stream_info(avformat_ctx, NULL);
+	}
+	}
 
 	mediaStatusChanged(QMediaPlayer::MediaStatus::LoadedMedia);
 
-	Q_EMIT durationChanged(avformat_ctx->duration * 1000 / AV_TIME_BASE);
+	Q_EMIT durationChanged(d_ptr->avformat_ctx->duration * 1000 / AV_TIME_BASE);
 
 	// 获取 video index 和 audio index
 
 	int video_index, audio_index;
 
-	video_index = stream_index(AVMEDIA_TYPE_VIDEO, avformat_ctx);
-	audio_index = stream_index(AVMEDIA_TYPE_AUDIO, avformat_ctx);
+	video_index = stream_index(AVMEDIA_TYPE_VIDEO, d_ptr->avformat_ctx.get());
+	audio_index = stream_index(AVMEDIA_TYPE_AUDIO, d_ptr->avformat_ctx.get());
 
 	// 开启线程，正式进入播放
 
@@ -143,8 +164,8 @@ void FFPlayer::load(std::string url)
 	d_func()->demuxer->moveToThread(&demux_thread);
 
 	// 创建 demux 对象.
-	auto astream = avformat_ctx->streams[audio_index];
-	auto vstream = avformat_ctx->streams[video_index];
+	auto astream = d_ptr->avformat_ctx->streams[audio_index];
+	auto vstream = d_ptr->avformat_ctx->streams[video_index];
 
 	d_ptr->adecoder.init_decoder(astream, audio_index);
 	d_ptr->vdecoder.init_decoder(vstream, video_index);
@@ -159,10 +180,44 @@ void FFPlayer::load(std::string url)
 	d_func()->demuxer->start();
 
 	// delete the demuxer
-	connect(d_ptr->demuxer, SIGNAL(frame_done()), &d_ptr->avsync, SLOT(slot_frame_done()));
+	connect(d_ptr->demuxer, SIGNAL(frame_done()), &d_ptr->avsync, SLOT(slot_frame_done()), Qt::QueuedConnection);
 	connect(d_ptr->demuxer, SIGNAL(frame_done()), d_ptr->demuxer, SLOT(deleteLater()));
 
+	connect(d_ptr->demuxer, &QDemuxer::frame_done, this, &FFPlayer::preload_next_uri, Qt::DirectConnection);
+
 	m_state = QMediaPlayer::PausedState;
+}
+
+void FFPlayer::preload_next_uri()
+{
+	QMutexLocker l(&(d_func()->m_repload_mutex));
+
+	if (d_func()->avformat_ctx_preloading_next)
+		return;
+
+	if ( m_state != QMediaPlayer::PlayingState)
+	{
+		return;
+	}
+
+	AVFormatContext* avformat_ctx = nullptr;//avformat_alloc_context();
+
+	mediaStatusChanged(QMediaPlayer::MediaStatus::LoadingMedia);
+
+	auto i = m_playlist->nextIndex();
+
+	if ( i == -1 )
+		return;
+
+	auto url = m_playlist->media(i).canonicalUrl().toString();
+
+	qDebug() << "preloading " << url;
+
+	avformat_open_input(&avformat_ctx, url.toStdString().c_str(), NULL, NULL);
+
+	avformat_find_stream_info(avformat_ctx, NULL);
+	d_func()->avformat_ctx_preloading_next.reset(avformat_ctx, avformat_free_context);
+	av_dump_format(d_ptr->avformat_ctx.get(), 0, NULL, 0);
 }
 
 void FFPlayer::play(std::string url)

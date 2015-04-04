@@ -65,6 +65,8 @@ private:
 
 	Q_SLOT void render_frame(const QVideoFrame&);
 
+	Q_SLOT void preload_next_uri();
+
 private:
     class FFPlayerPrivate* const d_ptr;
     Q_DECLARE_PRIVATE(FFPlayer)

@@ -347,6 +347,7 @@ void Player::slot_mediaStatusChanged(QMediaPlayer::MediaStatus status)
 			m_media_buffer_indicator.hide();
  			break;
 		case QMediaPlayer::StalledMedia:
+		case QMediaPlayer::BufferingMedia:
 		{
 			m_media_buffer_indicator.show();
 			return;
@@ -358,7 +359,7 @@ void Player::slot_mediaStatusChanged(QMediaPlayer::MediaStatus status)
 			m_media_buffer_indicator.hide();
 			break;
 		default:
-			m_media_buffer_indicator.show();
+			return;
 	}
 }
 

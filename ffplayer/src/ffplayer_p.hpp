@@ -25,12 +25,13 @@ public:
 
 	std::shared_ptr<AVFormatContext> avformat_ctx;
 
+	std::shared_ptr<AVFormatContext> avformat_ctx_preloading_next;
 protected:
 	// size of the buffer! 64MB for now
 	// should be enough for smooth playback
 	char buffer[1024*1024*64];
 private:
-
+	QMutex m_repload_mutex;
 	QPointer<QDemuxer> demuxer;
 	QVDecoder vdecoder;
 	QADecoder adecoder;
