@@ -36,8 +36,8 @@ mediump vec3 get_yuv_from_texture(in mediump vec2 tcoord)
 	mediump float little_diff = XY_even_odd.x - float(XY_even_odd_x_rounded);
 
 	// Get the U and V values
-	int real_U_x = (XY_even_odd_x_rounded) & 0xFFFFFFFE;
-	int real_V_x = XY_even_odd_x_rounded | 1;
+	int real_U_x = (XY_even_odd_x_rounded) & int(0xFFFFFFFE);
+	int real_V_x = XY_even_odd_x_rounded | int(1);
 
 	mediump vec2 tex_cord_U, tex_cord_V;
 
