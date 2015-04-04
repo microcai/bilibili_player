@@ -11,6 +11,7 @@ QAudioVideoSync::QAudioVideoSync(FFPlayer* parent)
 	m_audio_out = nullptr;
 
 	connect(this, SIGNAL(pause()), this,  SLOT(do_pause()), Qt::BlockingQueuedConnection);
+	connect(this, SIGNAL(stop()), this,  SLOT(do_stop()), Qt::BlockingQueuedConnection);
 	connect(this, SIGNAL(resume()), this,  SLOT(do_resume()), Qt::QueuedConnection);
 }
 
@@ -36,9 +37,11 @@ void QAudioVideoSync::start()
 	m_sync_thread = std::thread(std::bind(&QAudioVideoSync::sync_thread, this));
 }
 
-void QAudioVideoSync::stop()
+void QAudioVideoSync::do_stop()
 {
 	m_stop = true;
+	if(m_audio_out)
+		m_audio_out->stop();
 
 	if (m_sync_thread.joinable())
 		m_sync_thread.join();
@@ -80,6 +83,9 @@ void QAudioVideoSync::stateChanged(QAudio::State s)
 	{
 		play_time.resume();
 		running();
+	}else if (s == QAudio::StoppedState)
+	{
+		m_audiobuf_list.clear();
 	}
 }
 
@@ -133,6 +139,11 @@ void QAudioVideoSync::sync_audio(const QAudioBuffer& a)
 
 			connect(m_audio_out, SIGNAL(stateChanged(QAudio::State)), this, SLOT(stateChanged(QAudio::State)));
 
+		}
+
+		if (m_audio_out->state() == QAudio::StoppedState && ! m_stop)
+		{
+			m_audio_out->start(this);
 		}
 
 		// 挂入列队
@@ -258,6 +269,8 @@ void QAudioVideoSync::sync_thread()
 					play_finished();
 					return;
 				}
+				if(m_stop)
+					return;
 
 				Q_EMIT need_more_frame();
 				l.unlock();
@@ -276,7 +289,7 @@ void QAudioVideoSync::sync_thread()
 				Q_EMIT frames_ready();
 		}
 
-		double base_shift = -220;
+		double base_shift = -150;
 
 		// 接着同步到时间点
 		QMutexLocker lock_list(&m_ptslock);

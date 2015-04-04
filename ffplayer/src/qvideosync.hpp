@@ -29,7 +29,7 @@ public:
 	Q_SIGNAL void pause();
 	Q_SIGNAL void resume();
 
-	Q_SLOT void stop();
+	Q_SIGNAL void stop();
 
 	Q_SIGNAL void clear_queue();
 
@@ -46,6 +46,7 @@ private:
 	Q_SLOT void do_clear_queue();
 	Q_SLOT void do_pause();
 	Q_SLOT void do_resume();
+	Q_SLOT void do_stop();
 
 	Q_SLOT void frame_seeked();
 	Q_SLOT void sync_frame(const QVideoFrame&);

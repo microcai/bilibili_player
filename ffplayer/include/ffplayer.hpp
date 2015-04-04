@@ -35,14 +35,16 @@ public:
 	}
 
 	Q_SLOT void play();
-	void stop(){}
-	void pause();
+	Q_SLOT void load();
+	Q_SLOT void stop();
+	Q_SLOT void pause();
 
 	QMediaPlaylist * playlist() const {return const_cast<QMediaPlaylist*>(m_playlist);}
 	void setPlaylist(QMediaPlaylist * playlist){ m_playlist = playlist;};
 
 	void setPosition(qint64 position);
-	void play(std::string url);
+
+
 
 	void setNotifyInterval(int milliSeconds){}
 
@@ -56,6 +58,9 @@ Q_SIGNALS:
 	void stateChanged(QMediaPlayer::State state);
 
 private:
+	void load(std::string url);
+	void play(std::string url);
+
 	void SetMediaStatus(QMediaPlayer::MediaStatus status){m_MediaStatus = status;};
 
 	Q_SLOT void render_frame(const QVideoFrame&);

@@ -220,6 +220,7 @@ void Player::slot_drag_slide_done()
 		{
 			m_player.stop();
 			play_list()->setCurrentIndex(result.first);
+			m_player.load();
 			m_player.setPosition(result.second);
 			m_player.play();
 		}

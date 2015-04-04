@@ -66,7 +66,9 @@ FFPlayer::FFPlayer()
 
 	auto finish_connect = connect(&d_ptr->avsync, &QAudioVideoSync::play_finished, this, [this]()
 	{
-		// play next url
+		if ( m_state != QMediaPlayer::PlayingState)
+			return;
+			// play next url
 		auto next_index = m_playlist->currentIndex() + 1;
 
 		if (m_playlist->mediaCount() > next_index)
@@ -101,7 +103,7 @@ static int stream_index(enum AVMediaType type, AVFormatContext *ctx)
 	return -1;
 }
 
-void FFPlayer::play(std::string url)
+void FFPlayer::load(std::string url)
 {
 	d_ptr->avsync.stop();
 	d_ptr->adecoder.close_codec();
@@ -152,15 +154,26 @@ void FFPlayer::play(std::string url)
 
 	d_func()->demuxer->start();
 
-	setProperty("MediaStatus", QMediaPlayer::MediaStatus::BufferingMedia);
-	mediaStatusChanged(QMediaPlayer::MediaStatus::BufferingMedia);
-
 	// delete the demuxer
 	connect(d_ptr->demuxer, SIGNAL(frame_done()), &d_ptr->avsync, SLOT(slot_frame_done()));
 	connect(d_ptr->demuxer, SIGNAL(frame_done()), d_ptr->demuxer, SLOT(deleteLater()));
 
+	m_state = QMediaPlayer::PausedState;
+}
 
+void FFPlayer::play(std::string url)
+{
+	load(url);
+	setProperty("MediaStatus", QMediaPlayer::MediaStatus::BufferingMedia);
+	mediaStatusChanged(QMediaPlayer::MediaStatus::BufferingMedia);
 	d_ptr->avsync.start();
+}
+
+void FFPlayer::stop()
+{
+	m_state = QMediaPlayer::StoppedState;
+	d_ptr->demuxer->stop();
+	d_ptr->avsync.stop();
 }
 
 void FFPlayer::pause()
@@ -177,7 +190,7 @@ void FFPlayer::setPosition(qint64 position)
 		return;
 
 	// 忽略之
-	if (m_state != QMediaPlayer::PlayingState)
+	if (m_state == QMediaPlayer::StoppedState)
 		return;
 
 	// 先停止播放.
@@ -210,26 +223,42 @@ void FFPlayer::render_frame(const QVideoFrame&f)
 		m_vout->present(f);
 }
 
+void FFPlayer::load()
+{
+	// 从 play list 里获取url
+
+	auto i = m_playlist->currentIndex();
+
+	if ( i == -1)
+		m_playlist->setCurrentIndex(0);
+
+	auto url = m_playlist->currentMedia().canonicalUrl().toString().toStdString();
+
+	load(url);
+}
+
 void FFPlayer::play()
 {
 	if ( m_state == QMediaPlayer::StoppedState)
 	{
-	// 从 play list 里获取url
+		if (m_MediaStatus == QMediaPlayer::LoadedMedia)
+		{
+			setProperty("MediaStatus", QMediaPlayer::MediaStatus::BufferingMedia);
+			mediaStatusChanged(QMediaPlayer::MediaStatus::BufferingMedia);
+			d_ptr->avsync.start();
+			return;
+		}
 
-	m_playlist->setCurrentIndex(0);
+		// 从 play list 里获取url
 
-	auto url = m_playlist->currentMedia().canonicalUrl().toString().toStdString();
+		auto i = m_playlist->currentIndex();
 
-	play(url);
+		if ( i == -1)
+			m_playlist->setCurrentIndex(0);
 
-	// 打开 url
+		auto url = m_playlist->currentMedia().canonicalUrl().toString().toStdString();
 
-	// TODO
-	// 缓冲到一定的数据量
-
-	// 开始播放
-
-	// 播放过程中监控剩余时间，剩余时间剩下 30s 的时候开始缓冲下一个
+		play(url);
 
 	}else if (m_state == QMediaPlayer::PausedState)
 	{
