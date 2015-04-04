@@ -100,7 +100,8 @@ FFPlayer::~FFPlayer()
 {
 	d_ptr->avsync.stop();
 	d_ptr->vdecoder.stop();
-	d_ptr->demuxer->stop();
+	if (d_ptr->demuxer)
+		d_ptr->demuxer->stop();
 	demux_thread.quit();
 
 	demux_thread.wait();
