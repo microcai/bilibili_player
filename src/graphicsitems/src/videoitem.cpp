@@ -61,9 +61,26 @@ class VideoPainter : public QOpenGLFunctions
 
 		QOpenGLVersionProfile glversion( QOpenGLContext::currentContext()->format() );
 
-		qDebug() << glversion.isLegacyVersion();
+		QString glVendor((const char*)glGetString(GL_VENDOR));
+		QString glRender((const char*)glGetString(GL_RENDERER));
+		QString glslVersion((const char*)glGetString(GL_SHADING_LANGUAGE_VERSION));
 
-		qDebug() << "opengl version is " << glversion.version();
+		char openglversion[30]={0};
+		sprintf(openglversion, "%d.%d", glversion.version().first ,glversion.version().second);
+
+		qDebug() << "OpenGL version is " << openglversion;
+		qDebug() << "GLSL version is " << glslVersion;
+		qDebug() << "using OpenGL render" << glRender << "from" << glVendor;;
+		qDebug() << "is legecy opengl? " << glversion.isLegacyVersion();
+
+		if (glversion.isLegacyVersion())
+		{
+			qDebug() << "	you are running very old opengl stack, please upgrade your computer!";
+			qDebug() << "	if your graphics card is new, but you still see the message, upgrade your driver";
+			qDebug() << "	if your driver is latest, then your driver really sucks";
+		}
+
+
 	}
 
 public:
@@ -554,9 +571,6 @@ bool VideoItem::present(const QVideoFrame &frame)
 
 	if (frame.isValid())
 		currentFrame = frame;
-
-	currentFrame.map(QAbstractVideoBuffer::ReadOnly);
-	currentFrame.unmap();
 
 	need_update_gltexture = true;
 
