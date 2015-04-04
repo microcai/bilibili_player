@@ -354,6 +354,7 @@ void Player::slot_mediaStatusChanged(QMediaPlayer::MediaStatus status)
 
 		break;
 		case QMediaPlayer::NoMedia:
+		case QMediaPlayer::EndOfMedia:
 			m_media_buffer_indicator.hide();
 			break;
 		default:

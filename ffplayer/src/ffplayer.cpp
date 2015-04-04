@@ -67,7 +67,11 @@ FFPlayer::FFPlayer()
 	auto finish_connect = connect(&d_ptr->avsync, &QAudioVideoSync::play_finished, this, [this]()
 	{
 		if ( m_state != QMediaPlayer::PlayingState)
+		{
+			setProperty("MediaStatus", QMediaPlayer::MediaStatus::EndOfMedia);
+			mediaStatusChanged(QMediaPlayer::MediaStatus::EndOfMedia);
 			return;
+		}
 			// play next url
 		auto next_index = m_playlist->currentIndex() + 1;
 
@@ -172,7 +176,8 @@ void FFPlayer::play(std::string url)
 void FFPlayer::stop()
 {
 	m_state = QMediaPlayer::StoppedState;
-	d_ptr->demuxer->stop();
+	if (d_ptr->demuxer)
+		d_ptr->demuxer->stop();
 	d_ptr->avsync.stop();
 }
 
