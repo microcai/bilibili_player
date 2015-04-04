@@ -7,10 +7,11 @@
 #include "ffplayer_p.hpp"
 #include "qio2avio.hpp"
 
-
-
 FFPlayerPrivate::FFPlayerPrivate(FFPlayer* q)
 	: q_ptr(q)
+	, vdecoder(q)
+	, avsync(q)
+	, adecoder(q)
 {
 	avcodec_register_all();
 	av_register_all();
@@ -21,11 +22,7 @@ FFPlayerPrivate::FFPlayerPrivate(FFPlayer* q)
 
 FFPlayerPrivate::~FFPlayerPrivate()
 {
-	delete adecoder;
-	delete vdecoder;
 	delete demuxer;
-	delete avsync;
-
 	avformat_network_deinit();
 }
 
@@ -33,17 +30,51 @@ FFPlayer::FFPlayer()
  : d_ptr(new FFPlayerPrivate(this))
 {
 	demux_thread.start();
+
+	d_func()->vdecoder.moveToThread(&demux_thread);
+	d_func()->adecoder.moveToThread(&demux_thread);
+	d_func()->avsync.moveToThread(&demux_thread);
+
+	connect(&d_ptr->avsync, SIGNAL(render_frame(const QVideoFrame&)), this, SLOT(render_frame(const QVideoFrame&)), Qt::DirectConnection);
+
+	connect(&d_ptr->vdecoder, SIGNAL(videoframe_decoded(const QVideoFrame&)), &d_ptr->avsync, SLOT(sync_frame(const QVideoFrame&)), Qt::DirectConnection);
+	connect(&d_ptr->adecoder, SIGNAL(audioframe_decoded(const QAudioBuffer&)), &d_ptr->avsync, SLOT(sync_audio(const QAudioBuffer&)), Qt::DirectConnection);
+
+	connect(&d_ptr->avsync, &QAudioVideoSync::nomore_frames, this, [this]()
+	{
+		m_MediaStatus = QMediaPlayer::MediaStatus::BufferingMedia;
+		mediaStatusChanged(m_MediaStatus);
+	});
+
+	connect(&d_ptr->avsync, &QAudioVideoSync::frames_ready, this, [this]()
+	{
+		if ( MediaStatus() != QMediaPlayer::MediaStatus::BufferedMedia)
+		{
+			m_MediaStatus = QMediaPlayer::MediaStatus::BufferedMedia;
+			mediaStatusChanged(m_MediaStatus);
+		}
+	});
+
+	connect(&d_ptr->avsync, &QAudioVideoSync::suspended, this, [this](){
+		m_state = QMediaPlayer::PausedState;
+		stateChanged(m_state);
+	});
+
+	connect(&d_ptr->avsync, &QAudioVideoSync::running, this, [this](){
+		m_state = QMediaPlayer::PlayingState;
+		stateChanged(m_state);
+	});
+
 }
 
 FFPlayer::~FFPlayer()
 {
-	d_ptr->vdecoder->stop();
+	d_ptr->avsync.stop();
+	d_ptr->vdecoder.stop();
 	d_ptr->demuxer->stop();
-	d_ptr->avsync->stop();
 	demux_thread.quit();
 
 	demux_thread.wait();
-
 
     delete d_ptr;
 }
@@ -88,57 +119,24 @@ void FFPlayer::play(std::string url)
 	// 创建 demux 对象.
 
 	d_func()->demuxer = new QDemuxer(this);
- 	d_func()->vdecoder = new QVDecoder(this, video_index);
- 	d_func()->adecoder = new QADecoder(this, audio_index);
-	d_func()->avsync = new QAudioVideoSync(this);
+//  	d_func()->vdecoder = new QVDecoder(this, video_index);
+//  	d_func()->adecoder = new QADecoder(this, audio_index);
+// 	d_func()->avsync = new QAudioVideoSync(this);
 
 	d_func()->demuxer->moveToThread(&demux_thread);
-	d_func()->vdecoder->moveToThread(&demux_thread);
-	d_func()->adecoder->moveToThread(&demux_thread);
-	d_func()->avsync->moveToThread(&demux_thread);
 
-	connect(d_func()->demuxer, SIGNAL(frame_readed(AVPacket*)), d_func()->vdecoder, SLOT(put_one_frame(AVPacket*)));
-	connect(d_func()->demuxer, SIGNAL(frame_readed(AVPacket*)), d_func()->adecoder, SLOT(put_one_frame(AVPacket*)));
 
-	connect(d_func()->vdecoder, SIGNAL(videoframe_decoded(const QVideoFrame&)), d_func()->avsync, SLOT(sync_frame(const QVideoFrame&)), Qt::DirectConnection);
-	connect(d_func()->adecoder, SIGNAL(audioframe_decoded(const QAudioBuffer&)), d_func()->avsync, SLOT(sync_audio(const QAudioBuffer&)), Qt::DirectConnection);
+	connect(d_func()->demuxer, SIGNAL(frame_readed(AVPacket*)), &d_ptr->vdecoder, SLOT(put_one_frame(AVPacket*)));
+	connect(d_func()->demuxer, SIGNAL(frame_readed(AVPacket*)), &d_ptr->adecoder, SLOT(put_one_frame(AVPacket*)));
 
-	connect(d_func()->avsync, SIGNAL(render_frame(const QVideoFrame&)), this, SLOT(render_frame(const QVideoFrame&)), Qt::DirectConnection);
+	connect(&d_ptr->avsync, SIGNAL(need_more_frame()), d_func()->demuxer, SLOT(slot_start()), Qt::QueuedConnection);
+
+	connect(d_ptr->demuxer, SIGNAL(frame_seeked()), &d_ptr->avsync, SLOT(frame_seeked()));
+
 	d_func()->demuxer->start();
-
-
-
-	connect(d_func()->avsync, SIGNAL(need_more_frame()), d_func()->demuxer, SLOT(slot_start()), Qt::QueuedConnection);
-
-	connect(d_ptr->demuxer, SIGNAL(frame_seeked()), d_ptr->avsync, SLOT(frame_seeked()));
 
 	setProperty("MediaStatus", QMediaPlayer::MediaStatus::BufferingMedia);
 	mediaStatusChanged(QMediaPlayer::MediaStatus::BufferingMedia);
-
-	connect(d_ptr->avsync, &QAudioVideoSync::nomore_frames, this, [this]()
-	{
-		m_MediaStatus = QMediaPlayer::MediaStatus::BufferingMedia;
-		mediaStatusChanged(m_MediaStatus);
-	});
-
-	connect(d_ptr->avsync, &QAudioVideoSync::frames_ready, this, [this]()
-	{
-		if ( MediaStatus() != QMediaPlayer::MediaStatus::BufferedMedia)
-		{
-			m_MediaStatus = QMediaPlayer::MediaStatus::BufferedMedia;
-			mediaStatusChanged(m_MediaStatus);
-		}
-	});
-
-	connect(d_ptr->avsync, &QAudioVideoSync::suspended, this, [this](){
-		m_state = QMediaPlayer::PausedState;
-		stateChanged(m_state);
-	});
-
-	connect(d_ptr->avsync, &QAudioVideoSync::running, this, [this](){
-		m_state = QMediaPlayer::PlayingState;
-		stateChanged(m_state);
-	});
 }
 
 void FFPlayer::pause()
@@ -146,23 +144,26 @@ void FFPlayer::pause()
 	if (m_state != QMediaPlayer::PlayingState)
 		return;
 	// 进入暂停功能
-	d_func()->avsync->pause();
+	d_func()->avsync.pause();
 }
 
 void FFPlayer::setPosition(qint64 position)
 {
+	if (!d_func()->demuxer)
+		return;
+
 	// 忽略之
 	if (m_state != QMediaPlayer::PlayingState)
 		return;
 
 	// 先停止播放.
-	d_func()->avsync->stop();
+	d_func()->avsync.stop();
 
 	// 接着快进
 	d_func()->demuxer->setPosition(position);
-	d_func()->avsync->clear_queue();
+	d_func()->avsync.clear_queue();
 
-	d_func()->avsync->start();
+	d_func()->avsync.start();
 }
 
 QMediaPlayer::MediaStatus FFPlayer::MediaStatus() const
@@ -208,7 +209,7 @@ void FFPlayer::play()
 
 	}else if (m_state == QMediaPlayer::PausedState)
 	{
-		d_func()->avsync->resume();
+		d_func()->avsync.resume();
 	}
 }
 

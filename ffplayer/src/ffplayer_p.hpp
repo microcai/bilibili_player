@@ -32,7 +32,7 @@ protected:
 private:
 
 	QDemuxer* demuxer;
-	QVDecoder* vdecoder;
-	QADecoder* adecoder;
-	QAudioVideoSync* avsync;
+	QVDecoder vdecoder;
+	QADecoder adecoder;
+	QAudioVideoSync avsync;
 };

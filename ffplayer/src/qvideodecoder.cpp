@@ -168,10 +168,17 @@ void QVDecoder::stop()
 	m_stop = true;
 }
 
-QVDecoder::QVDecoder(FFPlayer* _parent, int _video_index)
-	: video_index(_video_index)
-	, parent(_parent)
+QVDecoder::QVDecoder(FFPlayer* _parent)
+	: parent(_parent)
 {
+	codec = nullptr;
+	codec_context = nullptr;
+}
+
+void QVDecoder::init_codec(AVStream*, int video_index)
+{
+	close_codec();
+
 	current_video_frame.reset(av_frame_alloc(),
 		[](AVFrame*current_video_frame){av_frame_free(&current_video_frame);}
 	);
@@ -193,9 +200,19 @@ QVDecoder::QVDecoder(FFPlayer* _parent, int _video_index)
 	}
 }
 
+void QVDecoder::close_codec()
+{
+	if (codec_context && codec)
+	{
+		avcodec_close(codec_context);
+		codec_context = nullptr;
+		codec = nullptr;
+	}
+}
+
 QVDecoder::~QVDecoder()
 {
-	avcodec_close(codec_context);
+	close_codec();
 }
 
 void QVDecoder::open_hw_accel_codec(AVCodecID codec_id)

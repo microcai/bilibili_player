@@ -11,12 +11,14 @@ class QVDecoder : public QObject
 {
 	Q_OBJECT
 public:
-	QVDecoder(FFPlayer* parent, int video_index);
+	QVDecoder(FFPlayer* parent);
 
 	// emit to vidersync
 	Q_SIGNAL void videoframe_decoded(const QVideoFrame&);
 
 	virtual ~QVDecoder();
+
+	Q_SLOT void init_codec(AVStream*, int video_index);
 
 	void stop();
 
@@ -30,6 +32,7 @@ private:
 
 private:
 	void open_hw_accel_codec(AVCodecID codec_id);
+	void close_codec();
 
 private:
 	std::shared_ptr<AVFrame> current_video_frame;

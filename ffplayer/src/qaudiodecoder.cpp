@@ -158,10 +158,17 @@ void QADecoder::stop()
 	m_stop = true;
 }
 
-QADecoder::QADecoder(FFPlayer* _parent, int _audio_index)
-	: audio_index(_audio_index)
-	, parent(_parent)
+QADecoder::QADecoder(FFPlayer* _parent)
+	: parent(_parent)
 {
+	codec = nullptr;
+	codec_context = nullptr;
+}
+
+void QADecoder::init_decoder(AVStream* audio_strem, int audio_index)
+{
+	close_codec();
+
 	current_audio_frame.reset(av_frame_alloc(),
 		[](AVFrame*current_video_frame){av_frame_free(&current_video_frame);}
 	);
@@ -176,7 +183,17 @@ QADecoder::QADecoder(FFPlayer* _parent, int _audio_index)
 	avcodec_open2(codec_context, codec, NULL);
 }
 
+void QADecoder::close_codec()
+{
+	if (codec_context && codec)
+	{
+		avcodec_close(codec_context);
+		codec_context = nullptr;
+		codec = nullptr;
+	}
+}
+
 QADecoder::~QADecoder()
 {
-	avcodec_close(codec_context);
+	close_codec();
 }
