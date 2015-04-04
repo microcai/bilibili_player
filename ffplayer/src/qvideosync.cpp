@@ -123,7 +123,7 @@ void QAudioVideoSync::sync_audio(const QAudioBuffer& a)
 		if(!m_audio_out)
 		{
 			m_audio_out = new QAudioOutput(a.format());
-			m_audio_out->setNotifyInterval(2500);
+			m_audio_out->setNotifyInterval(8);
 			QIODevice::open(QIODevice::ReadOnly);
 
 			// 使用 1000ms 的缓冲区
@@ -292,7 +292,7 @@ void QAudioVideoSync::sync_thread()
 		double base_shift = -150;
 
 		// 接着同步到时间点
-		QMutexLocker lock_list(&m_ptslock);
+		QMutexLocker lock_list(&m_lock);
 
 		{
 
@@ -310,16 +310,11 @@ void QAudioVideoSync::sync_thread()
 			{
 				return;
 			}
-
-// 			l.unlock();
-			lock_list.unlock();
-			QThread::msleep(5);
+			m_avsync_notify.wait(&m_lock, 5);
 			if (m_stop)
 			{
 				return;
 			}
-			lock_list.relock();
-// 			l.relock();
 
 			if (m_list.empty())
 				continue;
