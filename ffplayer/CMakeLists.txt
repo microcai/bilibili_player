@@ -11,4 +11,6 @@ target_include_directories(ffplayer PUBLIC include/)
 
 set_target_properties(ffplayer PROPERTIES AUTOMOC ON)
 
+if (PULSEAUDIO_FOUND)
 target_link_libraries(ffplayer ${PULSEAUDIO_LIBRARY} ${PULSEAUDIO_MAINLOOP_LIBRARY})
+endif()
