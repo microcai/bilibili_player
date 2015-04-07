@@ -104,7 +104,6 @@ void QADecoder::avframe_decoded(std::shared_ptr<AVFrame> avframe)
 
 	format.setByteOrder(QAudioFormat::LittleEndian);
 	format.setCodec("audio/pcm");
-
 // 	avframe->best_effort_timestamp;
 	QAudioBuffer current_frame(avframe->nb_samples, format,
 		av_frame_get_best_effort_timestamp(avframe.get()));

@@ -122,11 +122,13 @@ void QAudioVideoSync::sync_audio(const QAudioBuffer& a)
 
 		if(!m_audio_out)
 		{
+#if 1
 			m_audio_out = new QAudioOutput(a.format());
+#else
+			m_audio_out = &paout;
+			m_audio_out->open(a.format());
+#endif
 			QIODevice::open(QIODevice::ReadOnly);
-
-			// 使用 1000ms 的缓冲区
-			m_audio_out->setBufferSize(a.format().sampleRate());// * (a.format().sampleSize()/8));
 
 			m_audio_out->start(this);
 
@@ -209,7 +211,7 @@ qint64 QAudioVideoSync::readDataUnlocked(char* data, qint64 maxlen)
 		played_audio_frame_time_stamp = f.startTime();// - 1000;
 
 
-		auto audio_time_in_buffer = 1000.0 * (1.0 - ( (double) m_audio_out->bytesFree() / (double) m_audio_out->bufferSize()));
+// 		auto audio_time_in_buffer = 1000.0 * (1.0 - ( (double) m_audio_out->bytesFree() / (double) m_audio_out->bufferSize()));
 		play_time.start();
 
 // 		played_audio_frame_time_stamp -= 1000;
@@ -310,7 +312,7 @@ void QAudioVideoSync::sync_thread()
 			{
 				return;
 			}
-			m_avsync_notify.wait(&m_lock, 500);
+			m_avsync_notify.wait(&m_lock, 7);
 			if (m_stop)
 			{
 				return;

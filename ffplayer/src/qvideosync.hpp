@@ -14,6 +14,7 @@
 
 #include "ffplayer.hpp"
 #include "ffmpeg.hpp"
+#include "qaudioout.hpp"
 
 class QAudioVideoSync : public QIODevice
 {
@@ -72,8 +73,13 @@ private:
 	qint64 bytesAvailable() const;
 
 private:
+#if 1
 	QPointer<QAudioOutput> m_audio_out;
+#else
+	PAOut paout;
 
+	QPointer<PAOut> m_audio_out;
+#endif
 	QWaitCondition m_avsync_notify;
 
 	bool m_stop = false;

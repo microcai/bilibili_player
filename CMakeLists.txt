@@ -49,6 +49,7 @@ pkg_check_modules(FFMPEG REQUIRED libavformat libavcodec libavfilter libavutil l
 
 #pkg_check_modules(LIBVA REQUIRED libva-x11 libva)
 
+find_package(PulseAudio)
 
 find_package(KF5WindowSystem)
 

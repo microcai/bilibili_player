@@ -16,7 +16,6 @@ FFPlayerPrivate::FFPlayerPrivate(FFPlayer* q)
 	av_register_all();
 
 	avformat_network_init();
-
 }
 
 FFPlayerPrivate::~FFPlayerPrivate()
