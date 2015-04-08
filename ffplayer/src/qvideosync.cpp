@@ -186,10 +186,10 @@ qint64 QAudioVideoSync::readData(char* data, qint64 maxlen)
 {
 	QMutexLocker l(&m_alock);
 
-	return readDataUnlocked(data, maxlen);
+	return readDatalocked(data, maxlen);
 }
 
-qint64 QAudioVideoSync::readDataUnlocked(char* data, qint64 maxlen)
+qint64 QAudioVideoSync::readDatalocked(char* data, qint64 maxlen)
 {
 	if (m_audiobuf_list.size() < 5)
 		Q_EMIT need_more_frame();
@@ -238,7 +238,7 @@ qint64 QAudioVideoSync::readDataUnlocked(char* data, qint64 maxlen)
 			m_audiobuf_list.pop_front();
 		}
 
-		return copy_size + readDataUnlocked(data + copy_size, maxlen - copy_size);
+		return copy_size + readDatalocked(data + copy_size, maxlen - copy_size);
 	}
 
 }
