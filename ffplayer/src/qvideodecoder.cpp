@@ -217,6 +217,8 @@ QVDecoder::~QVDecoder()
 	close_codec();
 }
 
+#ifdef  HAVE_VAAPI
+
 void QVDecoder::open_hw_accel_codec(AVCodecID codec_id)
 {
 	// 根据系统平台选择解码器
@@ -240,3 +242,5 @@ void QVDecoder::open_hw_accel_codec(AVCodecID codec_id)
 
 	codec_context->hwaccel_context = &m_va_context;
 }
+
+#endif

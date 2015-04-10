@@ -16,5 +16,6 @@ target_link_libraries(ffplayer ${PULSEAUDIO_LIBRARY} ${PULSEAUDIO_MAINLOOP_LIBRA
 endif()
 
 if (LIBVA_FOUND)
+target_compile_definitions(ffplayer PRIVATE -DHAVE_VAAPI)
 target_link_libraries(ffplayer ${LIBVA_LIBRARIES})
 endif()
