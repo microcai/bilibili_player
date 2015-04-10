@@ -1,4 +1,7 @@
 
+pkg_check_modules(LIBVA libva-x11 libva)
+
+
 qt5_wrap_cpp(MOC_FILE include/ffplayer.hpp)
 
 file(GLOB SRCS src/*.cpp src/*.h*)

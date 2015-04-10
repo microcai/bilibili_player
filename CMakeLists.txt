@@ -47,7 +47,6 @@ pkg_check_modules(LIBASS REQUIRED libass)
 
 pkg_check_modules(FFMPEG REQUIRED libavformat libavcodec libavfilter libavutil libavresample libavdevice)
 
-pkg_check_modules(LIBVA REQUIRED libva-glx libva)
 
 find_package(PulseAudio)
 

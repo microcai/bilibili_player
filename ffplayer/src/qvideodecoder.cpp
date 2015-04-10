@@ -3,9 +3,6 @@
 #include "ffmpeg.hpp"
 #include "ffplayer_p.hpp"
 
-#include <va/va.h>
-#include <va/va_x11.h>
-
 #include <QX11Info>
 
 struct hwdec_profile_entry {
@@ -218,6 +215,9 @@ QVDecoder::~QVDecoder()
 }
 
 #ifdef  HAVE_VAAPI
+
+#include <va/va.h>
+#include <va/va_x11.h>
 
 void QVDecoder::open_hw_accel_codec(AVCodecID codec_id)
 {
