@@ -45,7 +45,7 @@ set(BOX2D_BUILD_EXAMPLES OFF)
 
 pkg_check_modules(LIBASS REQUIRED libass)
 
-pkg_check_modules(FFMPEG REQUIRED libavformat libavcodec libavfilter libavutil libavresample libavdevice)
+#pkg_check_modules(FFMPEG REQUIRED libavformat libavcodec libavfilter libavutil libavresample libavdevice)
 
 
 find_package(PulseAudio)
@@ -62,7 +62,7 @@ link_libraries(${OPENSSL_LIBRARIES} ${Boost_LIBRARIES} ${LIBASS_LDFLAGS} ${LIBAS
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-add_subdirectory(ffplayer/)
+add_subdirectory(gstplayer/)
 
 add_subdirectory(src/)
 

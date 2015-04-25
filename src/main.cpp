@@ -12,6 +12,8 @@
 #include "xrandr/xrandr.hpp"
 #endif
 
+#include "gstplayer.hpp"
+
 #include "bplayer.hpp"
 #include "bilibilires.hpp"
 #include "player.hpp"
@@ -115,6 +117,8 @@ static void fuckoff_low_dpi_screen(const QScreen* screen, QSize native_screen_si
 
 int main(int argc, char* argv[])
 {
+	FFPlayer::init_player_library(argc, &argv);
+
 	QApplication app(argc, argv);
 	QCoreApplication::setApplicationName("bilibili player");
 	QCoreApplication::setApplicationVersion("0.9");

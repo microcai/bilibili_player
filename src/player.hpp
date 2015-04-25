@@ -18,7 +18,7 @@
 #include "asssubtitlesitem.hpp"
 #include "defs.hpp"
 
-#include "ffplayer.hpp"
+#include "gstplayer.hpp"
 
 class VideoItem;
 
